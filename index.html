@@ -181,7 +181,7 @@ function tacticsPanelHtml(tab){
     <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:8px">
       <span style="font-weight:700;font-size:13px">🎯 戦術</span>
       ${cross?'<span style="font-size:11px;background:var(--c-primary-bg);color:var(--c-primary-light);padding:2px 8px;border-radius:10px">媒体横断 / 顧客全体の総合評価</span>':''}
-      <span style="font-size:11px;color:var(--c-text-secondary)">（「売上サマリ」の戦術入力で編集可）</span>
+      <span style="font-size:11px;color:#9a6700">※手動入力の戦術メモ（データからの自動算出ではありません）</span>
     </div>
     <div style="font-size:13px;line-height:1.6;margin-bottom:14px">${esc(tacStrategy(tab))}</div>
     <div style="display:grid;grid-template-columns:1fr 1fr;gap:18px">
@@ -279,7 +279,7 @@ function salesFbHtml(){
     ${body}
     <div style="margin-top:12px"><div style="font-weight:700;font-size:12px;margin-bottom:4px">📝 打ち手メモ（自由記述・この端末に保存）</div>
       <textarea id="sales-memo" rows="2" onblur="saveSalesMemo()" placeholder="例：来週セール予定。CVR改善でLP改修中…" style="width:100%;box-sizing:border-box;font-family:inherit;font-size:12.5px;padding:6px 8px;border:1px solid var(--c-border);border-radius:6px;resize:vertical">${esc(memo)}</textarea></div>
-    <div style="font-size:11px;color:var(--c-text-muted);margin-top:8px">※現状評価は選択期間の実データから自動算出。推奨アクションは定量評価と打ち手メモに基づく実行案です（ルールベース）。</div>
+    <div style="font-size:11px;color:var(--c-text-muted);margin-top:8px">※現状評価は選択期間の実データから自動算出。推奨アクションは定量評価と打ち手メモに基づく実行案です（ルールベース）。「前期比」は対象期間を前半／後半に二分した比較で、季節性（前年同月比）は含みません。</div>
   </div></div>`;
 }
 function saveSalesArea(){try{localStorage.setItem(salesAreaKey(),document.getElementById('sales-area').value);}catch(e){}renderChan(curChan);}
@@ -434,8 +434,8 @@ function chanKpiHtml(c){
     <div class="kpi"><div class="label">アクセス数</div><div class="value">${fmtNum(sessTotal)}</div><div class="delta">${avgLabel} ${fmtNum(sessTotal/n)}</div></div>
     <div class="kpi"><div class="label">CVR</div><div class="value">${cvrPct}<small>%</small></div><div class="delta">購入件数÷アクセス数</div></div>
     <div class="kpi"><div class="label">リピート率</div><div class="value">${repPct}<small>%</small></div><div class="delta">${repNote}</div></div>
-    ${c.grossMargin?`<div class="kpi"><div class="label">粗利（粗利率）</div><div class="value">¥${fmtYen(Math.round(totalSales*c.grossMargin))}</div><div class="delta">粗利率 ${Math.round(c.grossMargin*100)}% / 損益分岐ROAS ${(1/c.grossMargin).toFixed(2)}</div></div>`:''}
-    ${(c.targets&&c.targets.salesMonthly)?(()=>{const avg=totalSales/n;const ach=avg/c.targets.salesMonthly*100;return `<div class="kpi"><div class="label">売上 目標達成</div><div class="value">${ach.toFixed(0)}<small>%</small></div><div class="delta">${avgLabel}¥${fmtYen(avg)} / 目標¥${fmtYen(c.targets.salesMonthly)}</div></div>`;})():''}`;
+    ${c.grossMargin?`<div class="kpi"><div class="label">粗利（粗利率）</div><div class="value">¥${fmtYen(Math.round(totalSales*c.grossMargin))}</div><div class="delta">粗利率 ${Math.round(c.grossMargin*100)}%・損益分岐ROAS ${(1/c.grossMargin).toFixed(2)}（原価は仮定値）</div></div>`:''}
+    ${(c.targets&&c.targets.salesMonthly)?(()=>{const avg=totalSales/n;const ach=avg/c.targets.salesMonthly*100;return `<div class="kpi"><div class="label">売上 目標達成</div><div class="value">${ach.toFixed(0)}<small>%</small></div><div class="delta">${avgLabel}¥${fmtYen(avg)} / 目標¥${fmtYen(c.targets.salesMonthly)}（仮定）</div></div>`;})():''}`;
 }
 function renderChan(key){
   destroyAll();curChan=key;
@@ -471,7 +471,7 @@ function renderChan(key){
   <div id="gran-bar" style="margin:2px 0 14px;display:${(curTab==='crm'||curTab==='customer')?'none':'flex'};gap:8px;align-items:center;font-size:12px;flex-wrap:wrap">
     <span style="color:var(--c-text-secondary)">粒度:</span>
     <span class="chan-pill active" id="gran-month" onclick="setGran('month')">月次</span>
-    <span class="chan-pill" id="gran-day" onclick="setGran('day')">日次</span>
+    ${(DAILY[key]&&DAILY[key].length)?`<span class="chan-pill" id="gran-day" onclick="setGran('day')">日次</span>`:`<span class="chan-pill" id="gran-day" style="opacity:.4;cursor:not-allowed" title="日次データは未提供（デモ）">日次🚫</span>`}
     <span id="month-range" style="display:inline-flex;align-items:center;gap:6px;color:var(--c-text-secondary)">
       期間: <input type="text" id="m-from" readonly onclick="openCal('m-from','month',event)" placeholder="開始月" style="font-family:inherit;font-size:12px;padding:3px 8px;border:1px solid var(--c-border);border-radius:6px;cursor:pointer;width:78px;background:#fff">
       〜 <input type="text" id="m-to" readonly onclick="openCal('m-to','month',event)" placeholder="終了月" style="font-family:inherit;font-size:12px;padding:3px 8px;border:1px solid var(--c-border);border-radius:6px;cursor:pointer;width:78px;background:#fff">
@@ -488,7 +488,7 @@ function renderChan(key){
       <div class="card"><div class="card-h" style="flex-wrap:wrap;gap:8px"><h3>月次トレンド</h3>
         <div id="metric-pick" style="display:flex;gap:12px;flex-wrap:wrap;font-size:12px;color:var(--c-text-secondary)">
           ${(()=>{const subAvail=series.some(d=>(d.salesSub||0)>0);
-            return [['sales','売上'],['salesReg','通常売上'],['salesSub','定期売上'],['salesNew','新規売上'],['salesRepeat','既存売上'],['orders','購入件数'],['sessions','アクセス数'],['cvr','CVR'],['aov','客単価'],['adCost','広告費']].map(([k,l])=>{
+            return [['sales','売上'],['salesReg','通常売上'],['salesSub','定期売上'],['salesNew','新規売上(通常)'],['salesRepeat','既存売上(通常)'],['orders','購入件数'],['sessions','アクセス数'],['cvr','CVR'],['aov','客単価'],['adCost','広告費']].map(([k,l])=>{
               const dis=(k==='salesSub'&&!subAvail);
               return dis ? `<label style="opacity:.35;cursor:not-allowed" title="このチャネルでは定期購入データを取得できません（${c.name}）"><input type="checkbox" disabled style="vertical-align:middle"> ${l}🚫</label>`
                          : `<label style="cursor:pointer;user-select:none"><input type="checkbox" value="${k}" ${k==='sales'?'checked':''} onchange="redrawMetric()" style="vertical-align:middle"> ${l}</label>`;}).join('');})()}
@@ -634,8 +634,8 @@ const METRICS={
   sessions:{label:'アクセス数', unit:'num', chart:'line', get:d=>d.sessions||0},
   cvr:    {label:'CVR',      unit:'pct', chart:'line', get:d=>(d.sessions>0?+(d.orders/d.sessions*100).toFixed(2):0)},
   aov:    {label:'客単価',   unit:'yen', chart:'line', get:d=>(d.orders>0?Math.round(d.sales/d.orders):0)},
-  salesNew:{label:'新規売上', unit:'yen', chart:'bar',  get:d=>d.salesNew||0},
-  salesRepeat:{label:'既存売上',unit:'yen', chart:'bar', get:d=>d.salesRepeat||0},
+  salesNew:{label:'新規売上(通常)', unit:'yen', chart:'bar',  get:d=>d.salesNew||0},
+  salesRepeat:{label:'既存売上(通常)',unit:'yen', chart:'bar', get:d=>d.salesRepeat||0},
   adCost: {label:'広告費',   unit:'yen', chart:'bar',  get:d=>d.adCost},
 };
 // 粒度（月次/日次）に応じた系列とラベル。月次=月レンジ、日次=日付レンジで絞り込み
