@@ -284,6 +284,17 @@ function salesFbHtml(){
 }
 function saveSalesArea(){try{localStorage.setItem(salesAreaKey(),document.getElementById('sales-area').value);}catch(e){}renderChan(curChan);}
 function saveSalesMemo(){try{localStorage.setItem(salesMemoKey(),document.getElementById('sales-memo').value);}catch(e){}}
+/* 獲得月別コホート（LTV・F2転換率）— 獲得チャネル/月の質を評価する材料 */
+function cohortHtml(c){
+  const co=(c.cohorts||[]); if(!co.length)return '';
+  const best=co.reduce((a,b)=>b.ltv>a.ltv?b:a,co[0]);
+  return `<div class="card" style="margin-top:14px"><div class="card-h"><h3>獲得月別コホート（LTV・F2転換率）</h3><span class="hint">いつ獲得した顧客の質が良いか＝獲得施策評価の材料</span></div><div class="card-b">
+    <table class="tbl"><thead><tr><th>獲得月</th><th class="num">獲得数</th><th class="num">推定LTV</th><th class="num">F2転換率</th></tr></thead><tbody>
+    ${co.map(x=>`<tr><td>${esc(x.month)}</td><td class="num">${fmtNum(x.size)}</td><td class="num">¥${fmtNum(x.ltv)}</td><td class="num">${Math.round((x.f2rate||0)*100)}%</td></tr>`).join('')}
+    </tbody></table>
+    <div class="note">最もLTVが高い獲得月: <b>${esc(best.month)}</b>（¥${fmtNum(best.ltv)} / F2転換${Math.round((best.f2rate||0)*100)}%）。新規→2回目の定着とLTVで獲得施策の質を評価できます。</div>
+  </div></div>`;
+}
 
 function fmtYoy(yoy){ // yoy=null（比較対象月なし）は「—」表示
   if(yoy==null) return {cls:'',arrow:'',text:'前年比 —'};
@@ -422,7 +433,9 @@ function chanKpiHtml(c){
     <div class="kpi"><div class="label">購入件数</div><div class="value">${fmtNum(totalOrders)}<small>件</small></div><div class="delta">客単価 ¥${fmtNum(aov)}</div></div>
     <div class="kpi"><div class="label">アクセス数</div><div class="value">${fmtNum(sessTotal)}</div><div class="delta">${avgLabel} ${fmtNum(sessTotal/n)}</div></div>
     <div class="kpi"><div class="label">CVR</div><div class="value">${cvrPct}<small>%</small></div><div class="delta">購入件数÷アクセス数</div></div>
-    <div class="kpi"><div class="label">リピート率</div><div class="value">${repPct}<small>%</small></div><div class="delta">${repNote}</div></div>`;
+    <div class="kpi"><div class="label">リピート率</div><div class="value">${repPct}<small>%</small></div><div class="delta">${repNote}</div></div>
+    ${c.grossMargin?`<div class="kpi"><div class="label">粗利（粗利率）</div><div class="value">¥${fmtYen(Math.round(totalSales*c.grossMargin))}</div><div class="delta">粗利率 ${Math.round(c.grossMargin*100)}% / 損益分岐ROAS ${(1/c.grossMargin).toFixed(2)}</div></div>`:''}
+    ${(c.targets&&c.targets.salesMonthly)?(()=>{const avg=totalSales/n;const ach=avg/c.targets.salesMonthly*100;return `<div class="kpi"><div class="label">売上 目標達成</div><div class="value">${ach.toFixed(0)}<small>%</small></div><div class="delta">${avgLabel}¥${fmtYen(avg)} / 目標¥${fmtYen(c.targets.salesMonthly)}</div></div>`;})():''}`;
 }
 function renderChan(key){
   destroyAll();curChan=key;
@@ -475,7 +488,7 @@ function renderChan(key){
       <div class="card"><div class="card-h" style="flex-wrap:wrap;gap:8px"><h3>月次トレンド</h3>
         <div id="metric-pick" style="display:flex;gap:12px;flex-wrap:wrap;font-size:12px;color:var(--c-text-secondary)">
           ${(()=>{const subAvail=series.some(d=>(d.salesSub||0)>0);
-            return [['sales','売上'],['salesReg','通常売上'],['salesSub','定期売上'],['orders','購入件数'],['sessions','アクセス数'],['cvr','CVR'],['adCost','広告費']].map(([k,l])=>{
+            return [['sales','売上'],['salesReg','通常売上'],['salesSub','定期売上'],['salesNew','新規売上'],['salesRepeat','既存売上'],['orders','購入件数'],['sessions','アクセス数'],['cvr','CVR'],['aov','客単価'],['adCost','広告費']].map(([k,l])=>{
               const dis=(k==='salesSub'&&!subAvail);
               return dis ? `<label style="opacity:.35;cursor:not-allowed" title="このチャネルでは定期購入データを取得できません（${c.name}）"><input type="checkbox" disabled style="vertical-align:middle"> ${l}🚫</label>`
                          : `<label style="cursor:pointer;user-select:none"><input type="checkbox" value="${k}" ${k==='sales'?'checked':''} onchange="redrawMetric()" style="vertical-align:middle"> ${l}</label>`;}).join('');})()}
@@ -545,6 +558,7 @@ function renderChan(key){
       </div></div>
       <div class="card"><div class="card-h"><h3 id="seg-detail-title">セグメント詳細</h3></div><div class="card-b"><div id="seg-detail" class="note">セグメント（グラフまたは表の行）をクリックすると、該当顧客（匿名ID）とR/F/M値を表示します。</div></div></div>
     </div>
+    ${cohortHtml(c)}
   </div>`;
   document.getElementById('view-chan').innerHTML=html;
   defer(()=>renderTabCharts(key,series,mo,products,c,newC,repC,subC));
@@ -584,8 +598,13 @@ function showRfmCell(r,f){
   const rl=(c.rfm.matrix&&r>=13)?'R13+':('R'+r);
   document.getElementById('rfm-title').textContent=`${rl} × F${f} の顧客（${list.length}人）`;
   const el=document.getElementById('rfm-detail');
-  el.innerHTML=list.length? '<table class="tbl"><thead><tr><th>顧客ID(匿名)</th><th class="num">R(日)</th><th class="num">F(回)</th><th class="num">M(円)</th></tr></thead><tbody>'+
-    list.map(u=>`<tr><td>${u.id}</td><td class="num">${u.r}</td><td class="num">${u.f}</td><td class="num">¥${fmtNum(u.m)}</td></tr>`).join('')+'</tbody></table>' : '該当顧客なし';
+  // 最終購入商品の内訳（離脱客が何を買っていたか＝復帰オファー設計の材料）
+  const byLp={}; list.forEach(u=>{if(u.lp)byLp[u.lp]=(byLp[u.lp]||0)+1;});
+  const lpRank=Object.entries(byLp).sort((a,b)=>b[1]-a[1]);
+  const isChurn=r>=10;
+  const head=lpRank.length?`<div style="margin-bottom:10px;padding:8px 10px;background:${isChurn?'rgba(207,34,46,.07)':'var(--c-primary-bg)'};border-radius:8px;font-size:12px;line-height:1.6"><b>${isChurn?'⚠️ 離脱前の':''}最終購入商品の内訳：</b><br>${lpRank.slice(0,6).map(([n,cnt])=>`${esc(n)} <b>${cnt}人</b>`).join(' ／ ')}</div>`:'';
+  el.innerHTML=list.length? head+'<table class="tbl"><thead><tr><th>顧客ID(匿名)</th><th class="num">R(日)</th><th class="num">F(回)</th><th class="num">M(円)</th><th>最終購入商品</th></tr></thead><tbody>'+
+    list.map(u=>`<tr><td>${u.id}</td><td class="num">${u.r}</td><td class="num">${u.f}</td><td class="num">¥${fmtNum(u.m)}</td><td>${esc(u.lp||'—')}</td></tr>`).join('')+'</tbody></table>' : '該当顧客なし';
 }
 // RFMセル群の全顧客（匿名サンプル）を集約
 function allCustomers(rfm){const out=[];const cl=(rfm&&rfm.cells)||{};Object.values(cl).forEach(a=>a.forEach(u=>out.push(u)));return out;}
@@ -614,6 +633,9 @@ const METRICS={
   orders: {label:'購入件数', unit:'num', chart:'line', get:d=>d.orders},
   sessions:{label:'アクセス数', unit:'num', chart:'line', get:d=>d.sessions||0},
   cvr:    {label:'CVR',      unit:'pct', chart:'line', get:d=>(d.sessions>0?+(d.orders/d.sessions*100).toFixed(2):0)},
+  aov:    {label:'客単価',   unit:'yen', chart:'line', get:d=>(d.orders>0?Math.round(d.sales/d.orders):0)},
+  salesNew:{label:'新規売上', unit:'yen', chart:'bar',  get:d=>d.salesNew||0},
+  salesRepeat:{label:'既存売上',unit:'yen', chart:'bar', get:d=>d.salesRepeat||0},
   adCost: {label:'広告費',   unit:'yen', chart:'bar',  get:d=>d.adCost},
 };
 // 粒度（月次/日次）に応じた系列とラベル。月次=月レンジ、日次=日付レンジで絞り込み
@@ -664,11 +686,16 @@ function redrawProduct(){
   const rows=(c.products||[]).slice().sort((a,b)=>b.sales-a.sales).map(p=>({
     n:p.n, salesReg:Math.round((p.salesReg||0)*f.sales), salesSub:Math.round((p.salesSub||0)*f.sales),
     sales:Math.round(p.sales*f.sales), units:Math.round((p.units||0)*f.orders),
-    sessions:Math.round((p.sessions||0)*f.sessions), roas:p.roas}));
+    sessions:Math.round((p.sessions||0)*f.sessions), roas:p.roas,
+    cvr:(p.cvr!=null?p.cvr:(p.sessions>0?+(p.units/p.sessions*100).toFixed(2):0)),
+    gm:(p.grossMargin!=null?p.grossMargin:null), stock:(p.stock!=null?p.stock:null)}));
   window.__PRODROWS=rows;
-  let t='<table class="tbl"><thead><tr><th>商品</th><th class="num">通常</th><th class="num">定期</th><th class="num">合計</th><th class="num">販売数</th><th class="num">ROAS</th></tr></thead><tbody>';
-  t+=rows.map((p,i)=>`<tr style="cursor:pointer" onclick="showProduct(${i})"><td>▸ ${p.n}</td><td class="num">¥${fmtYen(p.salesReg)}</td><td class="num">¥${fmtYen(p.salesSub)}</td><td class="num">¥${fmtYen(p.sales)}</td><td class="num">${fmtNum(p.units)}</td><td class="num">${p.roas}倍</td></tr>`).join('');
-  t+=`<tr style="font-weight:700;background:#f8f9fb"><td>合計</td><td class="num">¥${fmtYen(rows.reduce((s,p)=>s+p.salesReg,0))}</td><td class="num">¥${fmtYen(rows.reduce((s,p)=>s+p.salesSub,0))}</td><td class="num">¥${fmtYen(rows.reduce((s,p)=>s+p.sales,0))}</td><td class="num">${fmtNum(rows.reduce((s,p)=>s+p.units,0))}</td><td class="num">—</td></tr></tbody></table>`;
+  const stTot=rows.reduce((s,p)=>s+(p.stock||0),0);
+  const gpTot=rows.reduce((s,p)=>s+(p.gm!=null?p.sales*p.gm:0),0);
+  const salesTot=rows.reduce((s,p)=>s+p.sales,0), unitsTot=rows.reduce((s,p)=>s+p.units,0), sessTot=rows.reduce((s,p)=>s+p.sessions,0);
+  let t='<table class="tbl"><thead><tr><th>商品</th><th class="num">合計売上</th><th class="num">販売数</th><th class="num">CVR</th><th class="num">粗利率</th><th class="num">粗利額</th><th class="num">在庫</th><th class="num">ROAS</th></tr></thead><tbody>';
+  t+=rows.map((p,i)=>`<tr style="cursor:pointer" onclick="showProduct(${i})"><td>▸ ${p.n}</td><td class="num">¥${fmtYen(p.sales)}</td><td class="num">${fmtNum(p.units)}</td><td class="num">${p.cvr}%</td><td class="num">${p.gm!=null?Math.round(p.gm*100)+'%':'—'}</td><td class="num">${p.gm!=null?'¥'+fmtYen(Math.round(p.sales*p.gm)):'—'}</td><td class="num">${p.stock!=null?(p.stock===0?'<span style="color:#cf222e">⚠️欠品</span>':fmtNum(p.stock)):'—'}</td><td class="num">${p.roas}倍</td></tr>`).join('');
+  t+=`<tr style="font-weight:700;background:#f8f9fb"><td>合計</td><td class="num">¥${fmtYen(salesTot)}</td><td class="num">${fmtNum(unitsTot)}</td><td class="num">${sessTot>0?(unitsTot/sessTot*100).toFixed(2):'0.00'}%</td><td class="num">${salesTot>0?Math.round(gpTot/salesTot*100)+'%':'—'}</td><td class="num">¥${fmtYen(Math.round(gpTot))}</td><td class="num">${fmtNum(stTot)}</td><td class="num">—</td></tr></tbody></table>`;
   document.getElementById('prod-table').innerHTML=t;
   mkChart('p-prod',{type:'bar',data:{labels:rows.map(p=>p.n),datasets:[
     {label:'通常購入',data:rows.map(p=>p.salesReg),backgroundColor:c.color},
@@ -694,8 +721,9 @@ function redrawAds(){
   const c=window.__C; if(!c)return; const f=rangeFactor();
   const ap=(c.adPlatforms||[]).map(a=>({name:a.name,cost:Math.round(a.cost*f.adCost),cvSales:Math.round(a.cvSales*f.sales),
     orders:Math.round((a.orders||0)*f.orders),sessions:Math.round((a.sessions||0)*f.sessions),roas:a.roas,
+    imp:Math.round((a.imp||0)*f.sessions),clicks:Math.round((a.clicks||0)*f.sessions),ctr:a.ctr,cpc:a.cpc,cpa:a.cpa,
     campaigns:(a.campaigns||[]).map(cm=>({name:cm.name,cost:Math.round(cm.cost*f.adCost),cvSales:Math.round(cm.cvSales*f.sales),
-      orders:Math.round((cm.orders||0)*f.orders),sessions:Math.round((cm.sessions||0)*f.sessions),roas:cm.roas}))}));
+      orders:Math.round((cm.orders||0)*f.orders),sessions:Math.round((cm.sessions||0)*f.sessions),imp:Math.round((cm.imp||0)*f.sessions),clicks:Math.round((cm.clicks||0)*f.sessions),roas:cm.roas}))}));
   window.__ADROWS=ap;
   const totCost=ap.reduce((s,a)=>s+a.cost,0),totCv=ap.reduce((s,a)=>s+a.cvSales,0);
   const totO=ap.reduce((s,a)=>s+a.orders,0),totS=ap.reduce((s,a)=>s+a.sessions,0);
@@ -706,9 +734,10 @@ function redrawAds(){
     <div class="rpp-stat"><div class="l">広告経由売上 合計</div><div class="v">¥${fmtYen(totCv)}</div></div>
     <div class="rpp-stat"><div class="l">合計ROAS</div><div class="v">${roas.toFixed(2)}倍</div></div>
     <div class="rpp-stat"><div class="l">ACOS</div><div class="v">${roas>0?(100/roas).toFixed(1):'—'}%</div></div>`;
-  let t='<table class="tbl"><thead><tr><th>媒体</th><th class="num">広告費</th><th class="num">広告経由売上</th><th class="num">アクセス</th><th class="num">件数</th><th class="num">CVR</th><th class="num">ROAS</th></tr></thead><tbody>';
-  t+=ap.map((a,i)=>`<tr style="cursor:pointer" onclick="showAdCampaigns(${i})"><td>▸ ${a.name}</td><td class="num">¥${fmtYen(a.cost)}</td><td class="num">¥${fmtYen(a.cvSales)}</td><td class="num">${fmtNum(a.sessions)}</td><td class="num">${fmtNum(a.orders)}</td><td class="num">${cvr(a)}%</td><td class="num">${a.roas}倍</td></tr>`).join('');
-  t+=`<tr style="font-weight:700;background:#f8f9fb"><td>合計</td><td class="num">¥${fmtYen(totCost)}</td><td class="num">¥${fmtYen(totCv)}</td><td class="num">${fmtNum(totS)}</td><td class="num">${fmtNum(totO)}</td><td class="num">${totS>0?(totO/totS*100).toFixed(2):'0.00'}%</td><td class="num">${roas.toFixed(2)}倍</td></tr></tbody></table>`;
+  const totImp=ap.reduce((s,a)=>s+(a.imp||0),0),totClk=ap.reduce((s,a)=>s+(a.clicks||0),0);
+  let t='<table class="tbl"><thead><tr><th>媒体</th><th class="num">広告費</th><th class="num">imp</th><th class="num">CTR</th><th class="num">CPC</th><th class="num">広告経由売上</th><th class="num">件数</th><th class="num">CPA</th><th class="num">ROAS</th></tr></thead><tbody>';
+  t+=ap.map((a,i)=>`<tr style="cursor:pointer" onclick="showAdCampaigns(${i})"><td>▸ ${a.name}</td><td class="num">¥${fmtYen(a.cost)}</td><td class="num">${fmtNum(a.imp)}</td><td class="num">${a.ctr!=null?a.ctr+'%':'—'}</td><td class="num">${a.cpc!=null?'¥'+fmtNum(a.cpc):'—'}</td><td class="num">¥${fmtYen(a.cvSales)}</td><td class="num">${fmtNum(a.orders)}</td><td class="num">${a.cpa!=null?'¥'+fmtNum(a.cpa):'—'}</td><td class="num">${a.roas}倍</td></tr>`).join('');
+  t+=`<tr style="font-weight:700;background:#f8f9fb"><td>合計</td><td class="num">¥${fmtYen(totCost)}</td><td class="num">${fmtNum(totImp)}</td><td class="num">${totImp>0?(totClk/totImp*100).toFixed(2):'0.00'}%</td><td class="num">${totClk>0?'¥'+fmtNum(Math.round(totCost/totClk)):'—'}</td><td class="num">¥${fmtYen(totCv)}</td><td class="num">${fmtNum(totO)}</td><td class="num">${totO>0?'¥'+fmtNum(Math.round(totCost/totO)):'—'}</td><td class="num">${roas.toFixed(2)}倍</td></tr></tbody></table>`;
   document.getElementById('ads-table').innerHTML=t;
   mkChart('p-ads2',{type:'bar',data:{labels:ap.map(a=>a.name),datasets:[
     {label:'広告費',data:ap.map(a=>a.cost),backgroundColor:'#e8710a'},
