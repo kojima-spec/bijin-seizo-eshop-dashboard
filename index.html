@@ -204,6 +204,92 @@ function tacticsFormHtml(){
 function saveTactics(){try{TAC_TABS.forEach(([k])=>{const el=document.getElementById('tac-'+k);if(el)localStorage.setItem(tacKey(k),el.value);});}catch(e){}renderChan(curChan);}
 function resetTactics(){try{TAC_TABS.forEach(([k])=>localStorage.removeItem(tacKey(k)));}catch(e){}renderChan(curChan);}
 
+/* ===== 売上タブ ルールベース自動FB（MVP） ===== */
+/* 視点フィルタ（課題領域。答えでなく「どの観点で評価するか」を選ぶ） */
+const SALES_AREAS=[['overall','売上全体を伸ばす'],['acquire','新規流入を増やす'],['cvr','転換率(CVR)を上げる'],['aov','客単価を上げる'],['retain','定期・リピートを増やす']];
+function salesAreaKey(){return 'tac_area_'+(META.client||'demo')+'_sales';}
+function salesMemoKey(){return 'tac_memo_'+(META.client||'demo')+'_sales';}
+/* 選択期間の系列から KPI を算出し、前半/後半比較で離散ラベル化（生値でなくラベルで条件判定） */
+function salesKpiCtx(){
+  const {series}=activeSL(); const n=series.length||1; const half=Math.max(1,Math.floor(n/2));
+  const S=(a,f)=>a.reduce((s,d)=>s+(f(d)||0),0);
+  const rec=series.slice(-half), prv=series.slice(0,Math.max(1,n-half));
+  const rs=S(rec,d=>d.sales),ps=S(prv,d=>d.sales),ro=S(rec,d=>d.orders),po=S(prv,d=>d.orders),rse=S(rec,d=>d.sessions),pse=S(prv,d=>d.sessions);
+  const tS=S(series,d=>d.sales),tO=S(series,d=>d.orders),tSe=S(series,d=>d.sessions),tSub=S(series,d=>d.salesSub);
+  const pct=(a,b)=>b>0?(a/b-1)*100:0;
+  const cvr=tSe>0?tO/tSe*100:0, cvr_r=rse>0?ro/rse*100:0, cvr_p=pse>0?po/pse*100:0;
+  const cvrD=cvr_p>0?(cvr_r/cvr_p-1)*100:0;
+  const aov=tO>0?tS/tO:0, aovD=pct(ro>0?rs/ro:0, po>0?ps/po:0);
+  const lab=(v,t)=>{t=t||5;return v>t?'up':v<-t?'down':'flat';};
+  return {months:n, sales_delta:pct(rs,ps), session_delta:pct(rse,pse), orders_delta:pct(ro,po),
+    cvr, cvr_delta:cvrD, aov, aov_delta:aovD, sub_ratio:tS>0?tSub/tS*100:0,
+    sales_t:lab(pct(rs,ps)), session_t:lab(pct(rse,pse)), orders_t:lab(pct(ro,po)), cvr_t:lab(cvrD), aov_t:lab(aovD)};
+}
+/* ルール表：when(離散ラベル条件) → status / 事実(fact) / 気づき(insight) / 確認の問い(q)。areaは関連視点 */
+const SALES_RULES=[
+  {id:'guard_short',when:c=>c.months<3,status:'info',area:'',
+    fact:'対象期間が{months}ヶ月と短いため、傾向の信頼度は低めです。',insight:'判定が不安定になりやすい区間です。',
+    q:['まず6ヶ月以上の期間に広げて確認しましたか？']},
+  {id:'flow_up_cvr_down',when:c=>c.session_t==='up'&&c.cvr_t==='down',status:'warn',area:'cvr',
+    fact:'アクセスは前期比{session_delta}%と増加する一方、CVRは{cvr}%（前期比{cvr_delta}%）と低下しています。',
+    insight:'流入は伸びているのに売上に転換できていない＝ボトルネックは集客より「転換率」側にある可能性が高い。',
+    q:['増えた流入の質は落ちていないか（新規チャネルの直帰率）？','カゴ落ち・在庫切れ・LP変更などCVR低下の心当たりは？','価格・送料の変更時期と重なっていないか？']},
+  {id:'aov_up_orders_down',when:c=>c.aov_t==='up'&&c.orders_t==='down',status:'warn',area:'aov',
+    fact:'客単価は前期比{aov_delta}%上昇する一方、注文件数は{orders_delta}%減少しています。',
+    insight:'単価上昇が件数減を覆い隠している恐れ。客数ベースでは成長が鈍化している可能性。',
+    q:['新規顧客数は維持できているか？','値上げ・高単価商品への偏重が件数減を招いていないか？']},
+  {id:'sub_strong',when:c=>c.sub_ratio>=35,status:'good',area:'retain',
+    fact:'定期売上比率が{sub_ratio}%と高く、収益の安定基盤になっています。',
+    insight:'ストック型収益が厚い。継続率の維持がLTV最大化の鍵。',
+    q:['定期の解約率は悪化していないか？','初回→2回目継続の歩留まりは把握できているか？']},
+  {id:'healthy',when:c=>c.sales_t==='up'&&c.cvr_t!=='down',status:'good',area:'overall',
+    fact:'売上は前期比{sales_delta}%、CVR{cvr}%を保ちながら成長しています。',
+    insight:'集客と転換のバランスが取れた健全な伸び。',
+    q:['好調要因を特定し再現できるか？','需要増に在庫・供給は追従できるか？']},
+  {id:'sales_down',when:c=>c.sales_t==='down',status:'bad',area:'overall',
+    fact:'売上が前期比{sales_delta}%と減少しています。',
+    insight:'アクセス{session_delta}%・CVR{cvr_delta}%・客単価{aov_delta}%のどれが主因かで打ち手が変わります。',
+    q:['減少は季節要因か構造要因か（前年同月比で確認）？','流入・転換・単価のどれが最も悪化したか？']},
+];
+function fillTpl(tpl,ctx){return String(tpl).replace(/\{(\w+)\}/g,(_,k)=>{const v=ctx[k];if(v==null)return '—';
+  if(typeof v==='number'){if(/delta/.test(k))return (v>=0?'+':'')+v.toFixed(1);if(k==='aov')return fmtNum(v);if(k==='months')return String(v);return v.toFixed(1);}return v;});}
+function evalSalesFb(){
+  const ctx=salesKpiCtx(); let area='';try{area=localStorage.getItem(salesAreaKey())||'';}catch(e){}
+  const m=SALES_RULES.filter(r=>r.when(ctx)); if(!m.length)return {ctx,area,main:null,all:[]};
+  const ord={bad:0,warn:1,good:2,info:3};
+  m.sort((a,b)=>{const ap=(area&&a.area===area)?0:1,bp=(area&&b.area===area)?0:1;if(ap!==bp)return ap-bp;return (ord[a.status]??9)-(ord[b.status]??9);});
+  return {ctx,area,main:m[0],all:m};
+}
+function salesFbHtml(){
+  const r=evalSalesFb();
+  const stM={good:['🟢','良好','#1a7f37','rgba(26,127,55,.10)'],warn:['🟡','注意','#9a6700','rgba(154,103,0,.10)'],bad:['🔴','課題','#cf222e','rgba(207,34,46,.10)'],info:['⚪','参考','#57606a','rgba(87,96,106,.10)']};
+  let area='';try{area=localStorage.getItem(salesAreaKey())||'';}catch(e){}
+  let memo='';try{memo=localStorage.getItem(salesMemoKey())||'';}catch(e){}
+  const opts=SALES_AREAS.map(([k,l])=>`<option value="${k}" ${area===k?'selected':''}>${esc(l)}</option>`).join('');
+  let body;
+  if(!r.main){body='<div style="font-size:12.5px;color:var(--c-text-secondary)">主要KPIは標準的な範囲で、特筆すべき注意点は検出されませんでした。</div>';}
+  else{const st=stM[r.main.status]||stM.info;
+    body=`<div style="display:grid;grid-template-columns:1fr 1fr;gap:18px">
+      <div style="grid-column:1/-1"><div style="font-weight:700;font-size:13px;margin-bottom:5px">📊 現状評価 <span style="font-size:11px;padding:2px 8px;border-radius:10px;background:${st[3]};color:${st[2]}">${st[0]} ${st[1]}</span></div>
+        <div style="font-size:12.5px;line-height:1.6">${esc(fillTpl(r.main.fact,r.ctx))}</div></div>
+      <div><div style="font-weight:700;font-size:13px;margin-bottom:5px">💡 気づき</div><div style="font-size:12.5px;line-height:1.65;color:var(--c-text-secondary)">${esc(fillTpl(r.main.insight,r.ctx))}</div></div>
+      <div><div style="font-weight:700;font-size:13px;margin-bottom:5px">✅ 次に確認すること</div><ul style="margin:0;padding-left:18px;font-size:12.5px;line-height:1.7;color:var(--c-text-secondary)">${(r.main.q||[]).map(q=>'<li>'+esc(fillTpl(q,r.ctx))+'</li>').join('')}</ul></div>
+    </div>`;}
+  return `<div class="card" style="margin-bottom:14px;border-left:4px solid var(--c-primary-light)"><div class="card-b">
+    <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:10px">
+      <span style="font-weight:700;font-size:13px">🎯 戦術（視点）</span>
+      <select id="sales-area" onchange="saveSalesArea()" style="font-family:inherit;font-size:12.5px;padding:5px 8px;border:1px solid var(--c-border);border-radius:6px"><option value="">（自動：最も注目すべき点）</option>${opts}</select>
+      <span style="font-size:11px;color:var(--c-text-secondary)">選んだ視点に沿って評価の優先順位が変わります</span>
+    </div>
+    ${body}
+    <div style="margin-top:12px"><div style="font-weight:700;font-size:12px;margin-bottom:4px">📝 打ち手メモ（自由記述・この端末に保存）</div>
+      <textarea id="sales-memo" rows="2" onblur="saveSalesMemo()" placeholder="例：来週セール予定。CVR改善でLP改修中…" style="width:100%;box-sizing:border-box;font-family:inherit;font-size:12.5px;padding:6px 8px;border:1px solid var(--c-border);border-radius:6px;resize:vertical">${esc(memo)}</textarea></div>
+    <div style="font-size:11px;color:var(--c-text-muted);margin-top:8px">※評価・気づき・問いは選択期間の実データから自動算出。アクションは断定せず「確認すべき問い」として提示しています（ルールベース）。</div>
+  </div></div>`;
+}
+function saveSalesArea(){try{localStorage.setItem(salesAreaKey(),document.getElementById('sales-area').value);}catch(e){}renderChan(curChan);}
+function saveSalesMemo(){try{localStorage.setItem(salesMemoKey(),document.getElementById('sales-memo').value);}catch(e){}}
+
 function fmtYoy(yoy){ // yoy=null（比較対象月なし）は「—」表示
   if(yoy==null) return {cls:'',arrow:'',text:'前年比 —'};
   const up=yoy>=1; return {cls:up?'up':'down',arrow:up?'▲':'▼',text:`前年比 ${up?'+':''}${((yoy-1)*100).toFixed(1)}%`};
@@ -389,8 +475,7 @@ function renderChan(key){
   </div>
 
   <div class="pane ${curTab==='sales'?'active':''}" id="pane-sales">
-    ${tacticsFormHtml()}
-    ${tacticsPanelHtml('sales')}
+    ${salesFbHtml()}
     <div class="grid c2e">
       <div class="card"><div class="card-h" style="flex-wrap:wrap;gap:8px"><h3>月次トレンド</h3>
         <div id="metric-pick" style="display:flex;gap:12px;flex-wrap:wrap;font-size:12px;color:var(--c-text-secondary)">
