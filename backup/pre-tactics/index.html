@@ -167,42 +167,7 @@ body{
 // dashboard_export.py が出力する data.json / data.{client}.json を読み込む。
 // CHANNELS[key] = {name,color,roas,aov,yoy,repeat,ctr,cvr,promos:[[名,割],..],products:[{n,sales,units,roas},..]}
 // MONTHLY[key]  = [{sales,adCost,orders,newCust,repeatCust}, ...]（ALL_MONTHS と同順）
-let CHANNELS={}, MONTHLY={}, DAILY={}, ALL_MONTHS=[], META={demo:true}, TACTICS={};
-function esc(s){return String(s==null?'':s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));}
-const TAC_TABS=[['sales','売上サマリ'],['product','商品別分析'],['ads','広告分析'],['promo','販促分析'],['crm','CRM分析'],['customer','顧客分析']];
-function tacKey(tab){return 'tactics_'+(META.client||'demo')+'_'+tab;}
-function tacStrategy(tab){let v=((TACTICS||{})[tab]||{}).strategy||'';try{const ls=localStorage.getItem(tacKey(tab));if(ls!=null)v=ls;}catch(e){}return v;}
-function tacticsPanelHtml(tab){
-  const T=(TACTICS||{})[tab]; if(!T)return '';
-  const cross=(tab==='ads'||tab==='crm');
-  const M={good:['🟢','良好','#1a7f37','rgba(26,127,55,.10)'],warn:['🟡','注意','#9a6700','rgba(154,103,0,.10)'],bad:['🔴','課題','#cf222e','rgba(207,34,46,.10)']};
-  const st=M[T.status]||M.warn;
-  return `<div class="card" style="margin-bottom:14px;border-left:4px solid ${st[2]}"><div class="card-b">
-    <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:8px">
-      <span style="font-weight:700;font-size:13px">🎯 戦術</span>
-      ${cross?'<span style="font-size:11px;background:var(--c-primary-bg);color:var(--c-primary-light);padding:2px 8px;border-radius:10px">媒体横断 / 顧客全体の総合評価</span>':''}
-      <span style="font-size:11px;color:var(--c-text-secondary)">（「売上サマリ」の戦術入力で編集可）</span>
-    </div>
-    <div style="font-size:13px;line-height:1.6;margin-bottom:14px">${esc(tacStrategy(tab))}</div>
-    <div style="display:grid;grid-template-columns:1fr 1fr;gap:18px">
-      <div><div style="font-weight:700;font-size:13px;margin-bottom:6px">📊 現状評価 <span style="font-size:11px;padding:2px 8px;border-radius:10px;background:${st[3]};color:${st[2]}">${st[0]} ${st[1]}</span></div>
-        <div style="font-size:12.5px;line-height:1.65;color:var(--c-text-secondary)">${esc(T.assessment||'')}</div></div>
-      <div><div style="font-weight:700;font-size:13px;margin-bottom:6px">✅ ネクストアクション</div>
-        <ul style="margin:0;padding-left:18px;font-size:12.5px;line-height:1.7;color:var(--c-text-secondary)">${(T.nextActions||[]).map(a=>'<li>'+esc(a)+'</li>').join('')}</ul></div>
-    </div></div></div>`;
-}
-function tacticsFormHtml(){
-  if(!TACTICS||!Object.keys(TACTICS).length)return '';
-  return `<div class="card" style="margin-bottom:14px"><div class="card-h"><h3>🎯 戦術を入力</h3><span class="hint">各分析項目の戦術を入力すると各タブのパネルに反映されます（この端末に保存）</span></div><div class="card-b">
-    ${TAC_TABS.map(([k,l])=>`<div style="margin-bottom:9px"><label style="font-size:12px;font-weight:600;display:block;margin-bottom:3px">${l}${(k==='ads'||k==='crm')?'（横断）':''}</label>
-      <textarea id="tac-${k}" rows="2" style="width:100%;box-sizing:border-box;font-family:inherit;font-size:12.5px;padding:6px 8px;border:1px solid var(--c-border);border-radius:6px;resize:vertical">${esc(tacStrategy(k))}</textarea></div>`).join('')}
-    <div style="display:flex;gap:8px;margin-top:4px">
-      <button onclick="saveTactics()" style="font-family:inherit;font-size:12px;padding:7px 16px;border:none;border-radius:6px;background:var(--c-primary);color:#fff;cursor:pointer">保存して反映</button>
-      <button onclick="resetTactics()" style="font-family:inherit;font-size:12px;padding:7px 16px;border:1px solid var(--c-border);border-radius:6px;background:#fff;cursor:pointer">既定に戻す</button>
-    </div></div></div>`;
-}
-function saveTactics(){try{TAC_TABS.forEach(([k])=>{const el=document.getElementById('tac-'+k);if(el)localStorage.setItem(tacKey(k),el.value);});}catch(e){}renderChan(curChan);}
-function resetTactics(){try{TAC_TABS.forEach(([k])=>localStorage.removeItem(tacKey(k)));}catch(e){}renderChan(curChan);}
+let CHANNELS={}, MONTHLY={}, DAILY={}, ALL_MONTHS=[], META={demo:true};
 
 function fmtYoy(yoy){ // yoy=null（比較対象月なし）は「—」表示
   if(yoy==null) return {cls:'',arrow:'',text:'前年比 —'};
@@ -389,8 +354,6 @@ function renderChan(key){
   </div>
 
   <div class="pane ${curTab==='sales'?'active':''}" id="pane-sales">
-    ${tacticsFormHtml()}
-    ${tacticsPanelHtml('sales')}
     <div class="grid c2e">
       <div class="card"><div class="card-h" style="flex-wrap:wrap;gap:8px"><h3>月次トレンド</h3>
         <div id="metric-pick" style="display:flex;gap:12px;flex-wrap:wrap;font-size:12px;color:var(--c-text-secondary)">
@@ -406,7 +369,6 @@ function renderChan(key){
   </div>
 
   <div class="pane ${curTab==='product'?'active':''}" id="pane-product">
-    ${tacticsPanelHtml('product')}
     <div class="grid c2e">
       <div class="card"><div class="card-h"><h3>商品別 売上（通常 / 定期 / 合計）</h3><span class="hint">行クリックでアクセス数・購入件数・CVR</span></div><div class="card-b">
         <div id="prod-table"></div>
@@ -417,7 +379,6 @@ function renderChan(key){
   </div>
 
   <div class="pane ${curTab==='ads'?'active':''}" id="pane-ads">
-    ${tacticsPanelHtml('ads')}
     <div id="ads-stats" class="rpp-grid" style="margin-bottom:18px"></div>
     <div class="grid c2e">
       <div class="card"><div class="card-h"><h3>広告媒体別 実績</h3><span class="hint">行クリックでキャンペーン内訳</span></div><div class="card-b">
@@ -429,7 +390,6 @@ function renderChan(key){
   </div>
 
   <div class="pane ${curTab==='promo'?'active':''}" id="pane-promo">
-    ${tacticsPanelHtml('promo')}
     <div class="grid c2e">
       <div class="card"><div class="card-h"><h3>${c.name} 流入チャネル別 売上</h3><span class="hint">行クリックでキャンペーン内訳</span></div><div class="card-b">
         <div id="promo-table"></div>
@@ -440,7 +400,6 @@ function renderChan(key){
   </div>
 
   <div class="pane ${curTab==='crm'?'active':''}" id="pane-crm">
-    ${tacticsPanelHtml('crm')}
     <div class="grid c2">
       <div class="card"><div class="card-h"><h3>RFMマトリクス（横=F・縦=R・セル=顧客数）</h3><span class="hint">セルをクリックで該当顧客（匿名）</span></div><div class="card-b">
         ${rfmMatrixHtml(c.rfm)}
@@ -450,7 +409,6 @@ function renderChan(key){
   </div>
 
   <div class="pane ${curTab==='customer'?'active':''}" id="pane-customer">
-    ${tacticsPanelHtml('customer')}
     <div class="grid c2e">
       <div class="card"><div class="card-h"><h3>顧客セグメント構成</h3><span class="hint">グラフ/表クリックで顧客＋RFM</span></div><div class="card-b">
         <div class="chart-box sm"><canvas id="p-seg2"></canvas></div>
@@ -773,7 +731,6 @@ async function bootstrap(){
     CHANNELS=d.channels||{};
     MONTHLY=d.monthly||{};
     DAILY=d.daily||{};
-    TACTICS=d.tactics||{};
   }catch(e){
     document.getElementById('view-all').innerHTML=
       `<div class="card"><div class="card-b">データ(${file})を読み込めませんでした（${e}）。`+
