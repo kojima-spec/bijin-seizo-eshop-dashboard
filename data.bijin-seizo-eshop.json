@@ -99,7 +99,122 @@
         }
       ],
       "adPlatforms": [],
-      "promos": [],
+      "promos": [
+        {
+          "name": "オーガニック検索",
+          "sales": 23674142,
+          "orders": 2013,
+          "sessions": 80681,
+          "campaigns": [
+            {
+              "name": "ブランド名検索",
+              "sales": 13020778,
+              "orders": 1107,
+              "sessions": 44375
+            },
+            {
+              "name": "一般キーワード",
+              "sales": 10653364,
+              "orders": 906,
+              "sessions": 36306
+            }
+          ]
+        },
+        {
+          "name": "リスティング広告(Google)",
+          "sales": 14796339,
+          "orders": 1258,
+          "sessions": 50425,
+          "campaigns": [
+            {
+              "name": "指名キャンペーン",
+              "sales": 5918536,
+              "orders": 503,
+              "sessions": 20170
+            },
+            {
+              "name": "非指名キャンペーン",
+              "sales": 8877803,
+              "orders": 755,
+              "sessions": 30255
+            }
+          ]
+        },
+        {
+          "name": "SNS広告(Meta/Instagram)",
+          "sales": 11837071,
+          "orders": 1006,
+          "sessions": 40340,
+          "campaigns": [
+            {
+              "name": "Instagram",
+              "sales": 7694096,
+              "orders": 654,
+              "sessions": 26221
+            },
+            {
+              "name": "Facebook",
+              "sales": 4142975,
+              "orders": 352,
+              "sessions": 14119
+            }
+          ]
+        },
+        {
+          "name": "メールマガジン",
+          "sales": 10357437,
+          "orders": 881,
+          "sessions": 35298,
+          "campaigns": [
+            {
+              "name": "定期配信",
+              "sales": 6214462,
+              "orders": 529,
+              "sessions": 21179
+            },
+            {
+              "name": "セール告知",
+              "sales": 4142975,
+              "orders": 352,
+              "sessions": 14119
+            }
+          ]
+        },
+        {
+          "name": "直接流入",
+          "sales": 8877803,
+          "orders": 755,
+          "sessions": 30255,
+          "campaigns": [
+            {
+              "name": "直接アクセス",
+              "sales": 8877803,
+              "orders": 755,
+              "sessions": 30255
+            }
+          ]
+        },
+        {
+          "name": "アフィリエイト",
+          "sales": 4438902,
+          "orders": 377,
+          "sessions": 15128,
+          "campaigns": [
+            {
+              "name": "提携メディアA",
+              "sales": 2663341,
+              "orders": 226,
+              "sessions": 9077
+            },
+            {
+              "name": "提携メディアB",
+              "sales": 1775561,
+              "orders": 151,
+              "sessions": 6051
+            }
+          ]
+        }
+      ],
       "rfm": {
         "total": 2056,
         "ltv": 42000,
