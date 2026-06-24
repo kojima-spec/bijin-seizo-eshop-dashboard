@@ -1269,7 +1269,6 @@ function snsKpiCtx(c){
     const prvPostCnt=p.postCountPrev||Math.max(1,Math.round(prv.length/7));
     const rpp=totReach/postCnt; const prvRpp=prvReach/prvPostCnt;
     const rppGrowth=prvRpp>0?((rpp/prvRpp)-1)*100:0;
-    // プラットフォーム別エンゲージメント
     let eng=0,prvEng=0;
     if(p.platform==='Instagram'){
       const s=rec.reduce((a,d)=>a+(d.saves||0),0); eng=totReach>0?s/totReach*100:0;
@@ -1281,7 +1280,6 @@ function snsKpiCtx(c){
       const s=rec.reduce((a,d)=>a+(d.likes||0),0); eng=totReach>0?s/totReach*100:0;
       const ps=prv.reduce((a,d)=>a+(d.likes||0),0); const pv=prv.reduce((a,d)=>a+(d.views||0),0); prvEng=pv>0?ps/pv*100:0;
     }
-    // 週次頻度（7日ごと・リーチ>0の日数でポスト代理）
     const weeks=[];
     for(let i=0;i<daily.length;i+=7){const w=daily.slice(i,i+7);weeks.push(w.filter(d=>(d.reach||d.views||0)>0).length);}
     return{platform:p.platform,color:p.color,rpp:Math.round(rpp),prvRpp:Math.round(prvRpp),rppGrowth,eng,prvEng,engDelta:eng-prvEng,weeks,hasPostCount};
@@ -1293,30 +1291,64 @@ function snsKpiCtx(c){
   const freqDrop=platforms.filter(p=>{const w=p.weeks;return w.length>=3&&w[w.length-1]<w[w.length-2]&&w[w.length-2]<w[w.length-3];});
   const bestGrowth=platforms.reduce((a,b)=>b.rppGrowth>a.rppGrowth?b:a,platforms[0]);
   const engDrop=platforms.filter(p=>p.rppGrowth>5&&p.engDelta<-0.5);
-  return{utmMissing,platforms,hasReliablePostCount,highPlatform:highP.platform,highRpp:highP.rpp,lowPlatform:lowP.platform,lowRpp:lowP.rpp,pRatio,freqDrop:freqDrop.map(p=>p.platform),bestGrowth,engDrop};
+  const maxDeclinePct=Math.abs(Math.min(...platforms.map(p=>p.rppGrowth)));
+  // UTM設定済みの場合: crossChannel.utm からSNSオーガニック CVR・売上を取得
+  let igCvr=0,tiktokCvr=0,paidSnsCvr=0,igRev=0,tiktokRev=0,igSessions=0,tiktokSessions=0,mailCvr=0,lineCvr=0;
+  const cc=c.crossChannel;
+  if(cc&&cc.utm&&utmMissing.length===0){
+    const igOrg=cc.utm.find(u=>(u.source||'').toLowerCase()==='instagram'&&u.medium==='social');
+    const tiktokOrg=cc.utm.find(u=>(u.source||'').toLowerCase()==='tiktok'&&u.medium==='social');
+    const paidSns=cc.utm.find(u=>['paid_social','cpc_display'].includes(u.medium||''));
+    const mailObj=cc.utm.find(u=>u.medium==='email');
+    const lineObj=cc.utm.find(u=>(u.source||'').toLowerCase()==='line');
+    if(igOrg){igCvr=igOrg.sessions>0?igOrg.conversions/igOrg.sessions*100:0;igRev=igOrg.revenue;igSessions=igOrg.sessions;}
+    if(tiktokOrg){tiktokCvr=tiktokOrg.sessions>0?tiktokOrg.conversions/tiktokOrg.sessions*100:0;tiktokRev=tiktokOrg.revenue;tiktokSessions=tiktokOrg.sessions;}
+    if(paidSns)paidSnsCvr=paidSns.sessions>0?paidSns.conversions/paidSns.sessions*100:0;
+    if(mailObj)mailCvr=mailObj.sessions>0?mailObj.conversions/mailObj.sessions*100:0;
+    if(lineObj)lineCvr=lineObj.sessions>0?lineObj.conversions/lineObj.sessions*100:0;
+  }
+  const totalSnsSessions=igSessions+tiktokSessions;
+  const avgSnsCvr=totalSnsSessions>0?(igSessions*igCvr/100+tiktokSessions*tiktokCvr/100)/totalSnsSessions*100:0;
+  const igP=platforms.find(p=>p.platform==='Instagram');
+  const tiktokP=platforms.find(p=>p.platform==='TikTok');
+  const igRpp=igP?igP.rpp:0;
+  const tiktokRppVal=tiktokP?tiktokP.rpp:0;
+  return{utmMissing,platforms,hasReliablePostCount,
+    highPlatform:highP.platform,highRpp:highP.rpp,lowPlatform:lowP.platform,lowRpp:lowP.rpp,pRatio,
+    freqDrop:freqDrop.map(p=>p.platform),bestGrowth,engDrop,maxDeclinePct,
+    igCvr,tiktokCvr,paidSnsCvr,igRev,tiktokRev,igSessions,tiktokSessions,
+    totalSnsSessions,avgSnsCvr,mailCvr,lineCvr,igRpp,tiktokRppVal};
 }
 const SNS_RULES=[
-  {id:'r0',when:c=>c.utmMissing.length>0,status:'warn',
-    fact:'{utmMissingStr}のUTMが未設置。SNS経由のEC売上CVとの紐付けができない状態。',
-    actions:['[計測設置] {utmMissingStr}の投稿URLにUTMパラメータを設定し、GA4でCV計測できる状態を作る','[計測設置] リンクビオにUTMつきURLを設定し、投稿ごとに固有パラメータを付与する運用フローを決める']},
-  {id:'r1',when:c=>c.bestGrowth&&c.bestGrowth.rppGrowth>=15,status:'good',
+  // R0: 全プラットフォームでリーチ/再生数が前半比マイナス → bad
+  {id:'r0',when:c=>c.platforms.length>0&&c.platforms.every(p=>p.rppGrowth<0),status:'bad',
+    fact:'全プラットフォームで1件リーチ/再生数が前半比マイナス（最大{maxDeclinePct}%減）。アルゴリズム変化またはコンテンツ品質の低下が疑われる。',
+    actions:['[コンテンツ] 前半に反応の良かった投稿フォーマット・テーマを確認し、後半で変えた点を洗い出す','[設計変更] 全プラットフォームの投稿時間帯・ハッシュタグセットを見直し、翌週から計測する']},
+  // R1: SNSオーガニックCVRが有料SNSの半分程度で低水準 → warn
+  {id:'r1',when:c=>c.totalSnsSessions>0&&c.avgSnsCvr>0&&c.avgSnsCvr<1.5&&c.paidSnsCvr>0,status:'warn',
+    fact:'SNSオーガニック平均CVR{avgSnsCvrPct}%に対し、SNS有料{paidSnsCvrPct}%・メルマガ{mailCvrPct}%。オーガニックコンテンツが購買意向に転換されにくい状態。',
+    actions:['[コンテンツ] 成分説明・使用感・ビフォーアフターなど保存・シェアされやすい教育コンテンツを週2本以上組み込む','[LP改修] SNS流入ページのヒートマップを計測し、スクロール深度と離脱ポイントを特定する']},
+  // R2: TikTokのリーチ効率はInstagramを大きく上回るが収益貢献は逆転 → warn
+  {id:'r2',when:c=>c.tiktokRppVal>0&&c.igRpp>0&&c.tiktokRppVal>c.igRpp*1.5&&c.igRev>c.tiktokRev*1.5,status:'warn',
+    fact:'TikTok1件リーチ（{tiktokRppVal}）はInstagramの{rppRatio}倍だが売上はInstagram（{igRevMan}万円）がTikTok（{tiktokRevMan}万円）の{revRatio}倍。認知効率はTikTok、購買転換はInstagramに偏在。',
+    actions:['[コンテンツ] TikTok動画末尾にプロフィールリンク訴求CTAを付加し、LP・Instagram誘導の橋渡しを作る','[設計変更] TikTok流入のランディングページをリール視聴者向けに最適化し、CVRギャップを縮める']},
+  // R3: SNSオーガニックが月100万円超の収益基盤として機能 → good
+  {id:'r3',when:c=>c.igRev>0&&(c.igRev+c.tiktokRev)>=1000000,status:'good',
+    fact:'SNSオーガニック（Instagram+TikTok）の売上貢献は計{totalSnsRevMan}万円。広告費ゼロの収益基盤として機能している。',
+    actions:['[予算配分] Instagramオーガニック訪問者をリターゲ広告の優先対象に追加し、有機流入をCVに転換する','[コンテンツ] 現在CVにつながっているInstagram投稿フォーマット（カルーセル/リール）を特定し来月の主力に設定する']},
+  // R4: rppGrowth >= 15% → good（将来発火用）
+  {id:'r4',when:c=>c.bestGrowth&&c.bestGrowth.rppGrowth>=15,status:'good',
     fact:'{bestGrowthPlatform}の1件あたりリーチが前半比+{bestGrowthPct}%増（{bestGrowthRpp}）。コンテンツ効率が上昇している。',
     actions:['[コンテンツ] 直近でリーチが最も高かった投稿フォーマットを今後2週間の主力フォーマットとして継続する','[コンテンツ] 効率の高かった{bestGrowthPlatform}への投稿配分を増やし、他プラットフォームの比率を見直す']},
-  {id:'r2',when:c=>c.engDrop&&c.engDrop.length>0,status:'warn',
-    fact:'{engDropStr}はリーチが増加しているが保存率・シェア率が低下。拡散はしているが購買意向の高いユーザーに届いていない。',
-    actions:['[コンテンツ] 成分説明・使用感・ビフォーアフターなど保存・シェアされやすい教育コンテンツを週2本以上組み込む','[コンテンツ] エンタメ拡散コンテンツと並行して、購入検討者向けのブランド紹介投稿を定期的に配置する']},
-  {id:'r3',when:c=>c.freqDrop.length>0,status:'warn',
+  // R5: 投稿頻度が連続低下 → warn（将来発火用）
+  {id:'r5',when:c=>c.freqDrop.length>0,status:'warn',
     fact:'{freqDropStr}の投稿頻度が2週連続で低下。アルゴリズム優遇が低下しリーチが10〜30%落ちた先行事例がある。',
     actions:['[コンテンツ] 今週中に{freqDropStr}の投稿を予約投稿し、週最低2本のペースを来月まで維持するスケジュールを設定する','[設計変更] 投稿テンプレート（定番フォーマット）を用意しコンテンツ制作コストを下げて頻度を維持しやすくする']},
-  {id:'r4',when:c=>c.hasReliablePostCount&&c.pRatio>=2&&c.highPlatform!==c.lowPlatform,status:'good',
-    fact:'{highPlatform}の1件リーチ（{highRpp}）は{lowPlatform}（{lowRpp}）の{pRatioFixed}倍。同じ制作コストなら{highPlatform}優先が合理的。',
-    actions:['[コンテンツ] 来月の投稿計画で{highPlatform}への配分を増やし、{lowPlatform}は月2〜3本の維持に絞る','[設計変更] {highPlatform}の高効率フォーマットを{lowPlatform}でも応用できるか検証する']},
 ];
 function snsFbHtml(c){
   const ctx=snsKpiCtx(c); if(!ctx)return '';
   const ST={good:['🟢','良好','#1a7f37','rgba(26,127,55,.10)'],warn:['🟡','注意','#9a6700','rgba(154,103,0,.10)'],bad:['🔴','課題','#cf222e','rgba(207,34,46,.10)']};
   const fc={...ctx,
-    utmMissingStr:ctx.utmMissing.join('・'),
     bestGrowthPlatform:ctx.bestGrowth?ctx.bestGrowth.platform:'—',
     bestGrowthPct:ctx.bestGrowth?ctx.bestGrowth.rppGrowth.toFixed(1):'—',
     bestGrowthRpp:ctx.bestGrowth?String(ctx.bestGrowth.rpp):'—',
@@ -1325,6 +1357,17 @@ function snsFbHtml(c){
     pRatioFixed:ctx.pRatio.toFixed(1),
     highRpp:String(ctx.highRpp),
     lowRpp:String(ctx.lowRpp),
+    maxDeclinePct:ctx.maxDeclinePct.toFixed(1),
+    avgSnsCvrPct:ctx.avgSnsCvr.toFixed(2),
+    paidSnsCvrPct:ctx.paidSnsCvr.toFixed(2),
+    mailCvrPct:ctx.mailCvr.toFixed(2),
+    igRevMan:String(Math.round(ctx.igRev/10000)),
+    tiktokRevMan:String(Math.round(ctx.tiktokRev/10000)),
+    totalSnsRevMan:String(Math.round((ctx.igRev+ctx.tiktokRev)/10000)),
+    igRpp:String(ctx.igRpp),
+    tiktokRppVal:String(ctx.tiktokRppVal),
+    rppRatio:ctx.igRpp>0?(ctx.tiktokRppVal/ctx.igRpp).toFixed(1):'—',
+    revRatio:ctx.tiktokRev>0?(ctx.igRev/ctx.tiktokRev).toFixed(1):'—',
   };
   const utmBanner=ctx.utmMissing.length>0?`<div style="padding:8px 12px;background:rgba(154,103,0,.10);border-radius:6px;font-size:12px;margin-bottom:10px">⚠️ <b>${esc(ctx.utmMissing.join('・'))}</b> のUTMが未設置 — EC売上CVとの紐付けなし</div>`:'';
   const matched=SNS_RULES.filter(r=>r.when(ctx));
@@ -1342,7 +1385,7 @@ function snsFbHtml(c){
     <div style="font-size:12.5px;line-height:1.6;margin-bottom:14px">${esc(fillTpl(main.fact,fc))}</div>
     <div style="font-weight:700;font-size:13px;margin-bottom:6px">✅ ネクストアクション</div>
     <ul style="margin:0;padding-left:18px;font-size:12.5px;line-height:1.75">${main.actions.map(a=>'<li>'+esc(fillTpl(a,fc))+'</li>').join('')}</ul>
-    <div style="font-size:11px;color:var(--c-text-muted);margin-top:10px">※1件リーチ=直近15日合計÷投稿数（postCountデータがない場合は推定週1投稿。プラットフォーム比較はpostCount設定後に有効）。IG=保存率・TikTok=シェア率・YouTube=いいね率で評価。</div>
+    <div style="font-size:11px;color:var(--c-text-muted);margin-top:10px">※1件リーチ=直近15日合計÷投稿数。CVR・売上はcrossChannel UTMデータから算出。IG=保存率・TikTok=シェア率・YouTube=いいね率で評価。</div>
   </div></div>`;
 }
 

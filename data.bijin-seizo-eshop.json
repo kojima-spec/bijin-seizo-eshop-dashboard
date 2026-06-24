@@ -15746,7 +15746,10 @@
                 "saves": 110,
                 "profileVisits": 285
               }
-            ]
+            ],
+            "utmConfigured": true,
+            "postCount": 9,
+            "postCountPrev": 8
           },
           {
             "platform": "YouTube",
@@ -15997,7 +16000,10 @@
                 "shares": 9,
                 "watchTimeMin": 4406
               }
-            ]
+            ],
+            "utmConfigured": true,
+            "postCount": 2,
+            "postCountPrev": 2
           },
           {
             "platform": "TikTok",
@@ -16252,7 +16258,10 @@
                 "shares": 47,
                 "profileViews": 727
               }
-            ]
+            ],
+            "utmConfigured": true,
+            "postCount": 14,
+            "postCountPrev": 12
           }
         ]
       },
