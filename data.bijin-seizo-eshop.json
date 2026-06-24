@@ -15066,7 +15066,1813 @@
           "ltv": 18035,
           "f2rate": 0.32
         }
-      ]
+      ],
+      "awarenessCampaigns": [
+        {
+          "name": "インフルエンサー春コレクション施策",
+          "type": "インフルエンサー",
+          "platform": "Instagram",
+          "start": "2026-04-08",
+          "end": "2026-04-21",
+          "postImpressions": 280000,
+          "likes": 15400,
+          "saves": 4200,
+          "gscImpBefore": 831.4,
+          "gscImpAfter": 1081.7,
+          "estImpLift": 493500,
+          "note": "フォロワー15万人のビューティー系インフルエンサーとタイアップ。リーチ拡大で指名検索も大幅増加。"
+        },
+        {
+          "name": "GW前TikTokバズ動画施策",
+          "type": "SNS投稿",
+          "platform": "TikTok",
+          "start": "2026-04-25",
+          "end": "2026-05-07",
+          "postImpressions": 520000,
+          "likes": 38000,
+          "saves": 6800,
+          "gscImpBefore": 801.6,
+          "gscImpAfter": 937.0,
+          "estImpLift": 740200,
+          "note": "GW直前の短尺動画キャンペーン。TikTok発でInstagramへの二次波及が顕著。"
+        },
+        {
+          "name": "美容メディアPRピッチ（5月号）",
+          "type": "PR施策",
+          "platform": "複数",
+          "start": "2026-05-01",
+          "end": "2026-05-15",
+          "postImpressions": 95000,
+          "likes": 4100,
+          "saves": 980,
+          "gscImpBefore": 962.2,
+          "gscImpAfter": 1084.5,
+          "estImpLift": 92100,
+          "note": "美容専門メディア3誌へのPRピッチ。記事掲載数2件。指名検索への波及は中程度。"
+        },
+        {
+          "name": "YouTubeレビュー動画タイアップ",
+          "type": "インフルエンサー",
+          "platform": "YouTube",
+          "start": "2026-05-12",
+          "end": "2026-05-26",
+          "postImpressions": 180000,
+          "likes": 9200,
+          "saves": 1800,
+          "gscImpBefore": 976.9,
+          "gscImpAfter": 1205.0,
+          "estImpLift": 282400,
+          "note": "チャンネル登録者8万人のスキンケア系YouTuberによる詳細レビュー動画。"
+        },
+        {
+          "name": "ギフティングサンプル配布（5月）",
+          "type": "ギフティング",
+          "platform": "Instagram",
+          "start": "2026-05-18",
+          "end": "2026-05-31",
+          "postImpressions": 42000,
+          "likes": 2100,
+          "saves": 380,
+          "gscImpBefore": 932.7,
+          "gscImpAfter": 952.5,
+          "estImpLift": 16200,
+          "note": "マイクロインフルエンサー20名へのサンプル提供。投稿ばらつきが大きく波及効率は低め。"
+        },
+        {
+          "name": "夏向けInstagramリールキャンペーン",
+          "type": "SNS投稿",
+          "platform": "Instagram",
+          "start": "2026-06-02",
+          "end": "2026-06-15",
+          "postImpressions": 210000,
+          "likes": 12500,
+          "saves": 3400,
+          "gscImpBefore": 1020.5,
+          "gscImpAfter": 1245.2,
+          "estImpLift": 276100,
+          "note": "夏の紫外線対策訴求でブランドサイトへの誘導を強化。リール視聴完了率が高かった。"
+        },
+        {
+          "name": "プレスリリース配信（新商品発表）",
+          "type": "PR施策",
+          "platform": "複数",
+          "start": "2026-06-10",
+          "end": "2026-06-20",
+          "postImpressions": 31000,
+          "likes": 820,
+          "saves": 190,
+          "gscImpBefore": 1000.3,
+          "gscImpAfter": 1018.3,
+          "estImpLift": 8900,
+          "note": "新商品ラインのプレスリリース配信。掲載メディア数は多いが直接的な認知増分は小さかった。"
+        }
+      ],
+      "brandedSearch": {
+        "note": "GSC匿名化により実数は過小計上。前月比・トレンドで評価してください。直近12ヶ月の数値はデモデータです。",
+        "monthly": [
+          {
+            "month": "24/07",
+            "brandedImp": 2823,
+            "brandedClicks": 385,
+            "nonbrandedImp": 27468,
+            "nonbrandedClicks": 1007,
+            "brandedPosition": 1.3,
+            "overallPosition": 4.0
+          },
+          {
+            "month": "24/08",
+            "brandedImp": 2935,
+            "brandedClicks": 426,
+            "nonbrandedImp": 27957,
+            "nonbrandedClicks": 863,
+            "brandedPosition": 1.1,
+            "overallPosition": 3.8
+          },
+          {
+            "month": "24/09",
+            "brandedImp": 2860,
+            "brandedClicks": 454,
+            "nonbrandedImp": 28502,
+            "nonbrandedClicks": 1321,
+            "brandedPosition": 1.1,
+            "overallPosition": 3.9
+          },
+          {
+            "month": "24/10",
+            "brandedImp": 3061,
+            "brandedClicks": 515,
+            "nonbrandedImp": 28707,
+            "nonbrandedClicks": 1462,
+            "brandedPosition": 1.2,
+            "overallPosition": 3.5
+          },
+          {
+            "month": "24/11",
+            "brandedImp": 3156,
+            "brandedClicks": 396,
+            "nonbrandedImp": 29496,
+            "nonbrandedClicks": 970,
+            "brandedPosition": 1.3,
+            "overallPosition": 3.9
+          },
+          {
+            "month": "24/12",
+            "brandedImp": 3201,
+            "brandedClicks": 487,
+            "nonbrandedImp": 30357,
+            "nonbrandedClicks": 1796,
+            "brandedPosition": 1.2,
+            "overallPosition": 3.9
+          },
+          {
+            "month": "25/01",
+            "brandedImp": 3275,
+            "brandedClicks": 562,
+            "nonbrandedImp": 30652,
+            "nonbrandedClicks": 1450,
+            "brandedPosition": 1.3,
+            "overallPosition": 3.3
+          },
+          {
+            "month": "25/02",
+            "brandedImp": 3244,
+            "brandedClicks": 404,
+            "nonbrandedImp": 30704,
+            "nonbrandedClicks": 1135,
+            "brandedPosition": 1.1,
+            "overallPosition": 3.6
+          },
+          {
+            "month": "25/03",
+            "brandedImp": 3382,
+            "brandedClicks": 480,
+            "nonbrandedImp": 31208,
+            "nonbrandedClicks": 1132,
+            "brandedPosition": 1.1,
+            "overallPosition": 4.2
+          },
+          {
+            "month": "25/04",
+            "brandedImp": 3454,
+            "brandedClicks": 449,
+            "nonbrandedImp": 31902,
+            "nonbrandedClicks": 1654,
+            "brandedPosition": 1.1,
+            "overallPosition": 3.7
+          },
+          {
+            "month": "25/05",
+            "brandedImp": 3582,
+            "brandedClicks": 549,
+            "nonbrandedImp": 32356,
+            "nonbrandedClicks": 1635,
+            "brandedPosition": 1.3,
+            "overallPosition": 4.1
+          },
+          {
+            "month": "25/06",
+            "brandedImp": 3524,
+            "brandedClicks": 489,
+            "nonbrandedImp": 32095,
+            "nonbrandedClicks": 1220,
+            "brandedPosition": 1.1,
+            "overallPosition": 4.2
+          },
+          {
+            "month": "25/07",
+            "brandedImp": 3703,
+            "brandedClicks": 589,
+            "nonbrandedImp": 32832,
+            "nonbrandedClicks": 1374,
+            "brandedPosition": 1.3,
+            "overallPosition": 3.8
+          },
+          {
+            "month": "25/08",
+            "brandedImp": 3670,
+            "brandedClicks": 564,
+            "nonbrandedImp": 33176,
+            "nonbrandedClicks": 1256,
+            "brandedPosition": 1.2,
+            "overallPosition": 4.2
+          },
+          {
+            "month": "25/09",
+            "brandedImp": 3763,
+            "brandedClicks": 676,
+            "nonbrandedImp": 33565,
+            "nonbrandedClicks": 1520,
+            "brandedPosition": 1.1,
+            "overallPosition": 3.3
+          },
+          {
+            "month": "25/10",
+            "brandedImp": 3784,
+            "brandedClicks": 633,
+            "nonbrandedImp": 34442,
+            "nonbrandedClicks": 1469,
+            "brandedPosition": 1.1,
+            "overallPosition": 3.7
+          },
+          {
+            "month": "25/11",
+            "brandedImp": 4003,
+            "brandedClicks": 713,
+            "nonbrandedImp": 34752,
+            "nonbrandedClicks": 1939,
+            "brandedPosition": 1.1,
+            "overallPosition": 4.0
+          },
+          {
+            "month": "25/12",
+            "brandedImp": 4020,
+            "brandedClicks": 546,
+            "nonbrandedImp": 35181,
+            "nonbrandedClicks": 1731,
+            "brandedPosition": 1.1,
+            "overallPosition": 3.7
+          },
+          {
+            "month": "26/01",
+            "brandedImp": 4052,
+            "brandedClicks": 699,
+            "nonbrandedImp": 36068,
+            "nonbrandedClicks": 1367,
+            "brandedPosition": 1.2,
+            "overallPosition": 3.5
+          },
+          {
+            "month": "26/02",
+            "brandedImp": 4199,
+            "brandedClicks": 579,
+            "nonbrandedImp": 36394,
+            "nonbrandedClicks": 1789,
+            "brandedPosition": 1.2,
+            "overallPosition": 3.5
+          },
+          {
+            "month": "26/03",
+            "brandedImp": 4244,
+            "brandedClicks": 707,
+            "nonbrandedImp": 36444,
+            "nonbrandedClicks": 1673,
+            "brandedPosition": 1.1,
+            "overallPosition": 3.6
+          },
+          {
+            "month": "26/04",
+            "brandedImp": 4189,
+            "brandedClicks": 723,
+            "nonbrandedImp": 37300,
+            "nonbrandedClicks": 2049,
+            "brandedPosition": 1.1,
+            "overallPosition": 3.4
+          },
+          {
+            "month": "26/05",
+            "brandedImp": 4403,
+            "brandedClicks": 550,
+            "nonbrandedImp": 37740,
+            "nonbrandedClicks": 1682,
+            "brandedPosition": 1.1,
+            "overallPosition": 4.1
+          },
+          {
+            "month": "26/06",
+            "brandedImp": 4454,
+            "brandedClicks": 661,
+            "nonbrandedImp": 37243,
+            "nonbrandedClicks": 1731,
+            "brandedPosition": 1.1,
+            "overallPosition": 4.2
+          }
+        ],
+        "keywords": [
+          {
+            "query": "美人製造研究所",
+            "impressions": 38400,
+            "clicks": 5820,
+            "ctr": 0.152,
+            "position": 1.1,
+            "branded": true
+          },
+          {
+            "query": "美人製造研究所 化粧水",
+            "impressions": 12300,
+            "clicks": 1640,
+            "ctr": 0.133,
+            "position": 1.3,
+            "branded": true
+          },
+          {
+            "query": "美人製造研究所 美容液",
+            "impressions": 9800,
+            "clicks": 1210,
+            "ctr": 0.123,
+            "position": 1.4,
+            "branded": true
+          },
+          {
+            "query": "美人製造研究所 口コミ",
+            "impressions": 7200,
+            "clicks": 820,
+            "ctr": 0.114,
+            "position": 1.8,
+            "branded": true
+          },
+          {
+            "query": "美人製造研究所 公式",
+            "impressions": 5400,
+            "clicks": 1080,
+            "ctr": 0.2,
+            "position": 1.0,
+            "branded": true
+          },
+          {
+            "query": "bijin seizo",
+            "impressions": 3100,
+            "clicks": 290,
+            "ctr": 0.094,
+            "position": 2.1,
+            "branded": true
+          },
+          {
+            "query": "スキンケア 美容液 おすすめ",
+            "impressions": 18400,
+            "clicks": 410,
+            "ctr": 0.022,
+            "position": 8.3,
+            "branded": false
+          },
+          {
+            "query": "乾燥肌 化粧水 ランキング",
+            "impressions": 14200,
+            "clicks": 280,
+            "ctr": 0.02,
+            "position": 9.7,
+            "branded": false
+          }
+        ]
+      },
+      "snsDaily": {
+        "note": "累計→前日差分で日次化。スナップショット欠損日は0補完。",
+        "platforms": [
+          {
+            "platform": "Instagram",
+            "color": "#E1306C",
+            "followers": 28400,
+            "posts": [
+              3,
+              8,
+              5,
+              9,
+              6,
+              11,
+              4,
+              7,
+              8,
+              5,
+              10,
+              6
+            ],
+            "daily": [
+              {
+                "date": "2026-06-01",
+                "reach": 2955,
+                "views": 4992,
+                "likes": 201,
+                "comments": 16,
+                "saves": 100,
+                "profileVisits": 477
+              },
+              {
+                "date": "2026-06-02",
+                "reach": 3779,
+                "views": 4773,
+                "likes": 224,
+                "comments": 20,
+                "saves": 105,
+                "profileVisits": 454
+              },
+              {
+                "date": "2026-06-03",
+                "reach": 2919,
+                "views": 5480,
+                "likes": 284,
+                "comments": 21,
+                "saves": 120,
+                "profileVisits": 462
+              },
+              {
+                "date": "2026-06-04",
+                "reach": 3314,
+                "views": 6091,
+                "likes": 292,
+                "comments": 16,
+                "saves": 97,
+                "profileVisits": 523
+              },
+              {
+                "date": "2026-06-05",
+                "reach": 3247,
+                "views": 5111,
+                "likes": 339,
+                "comments": 15,
+                "saves": 60,
+                "profileVisits": 440
+              },
+              {
+                "date": "2026-06-06",
+                "reach": 3291,
+                "views": 4435,
+                "likes": 323,
+                "comments": 21,
+                "saves": 75,
+                "profileVisits": 456
+              },
+              {
+                "date": "2026-06-07",
+                "reach": 3121,
+                "views": 3910,
+                "likes": 302,
+                "comments": 17,
+                "saves": 80,
+                "profileVisits": 456
+              },
+              {
+                "date": "2026-06-08",
+                "reach": 3395,
+                "views": 4453,
+                "likes": 300,
+                "comments": 23,
+                "saves": 80,
+                "profileVisits": 446
+              },
+              {
+                "date": "2026-06-09",
+                "reach": 3201,
+                "views": 6159,
+                "likes": 186,
+                "comments": 21,
+                "saves": 88,
+                "profileVisits": 412
+              },
+              {
+                "date": "2026-06-10",
+                "reach": 3960,
+                "views": 4794,
+                "likes": 392,
+                "comments": 15,
+                "saves": 102,
+                "profileVisits": 385
+              },
+              {
+                "date": "2026-06-11",
+                "reach": 2923,
+                "views": 4837,
+                "likes": 265,
+                "comments": 19,
+                "saves": 52,
+                "profileVisits": 560
+              },
+              {
+                "date": "2026-06-12",
+                "reach": 3133,
+                "views": 5845,
+                "likes": 229,
+                "comments": 19,
+                "saves": 158,
+                "profileVisits": 359
+              },
+              {
+                "date": "2026-06-13",
+                "reach": 2601,
+                "views": 4472,
+                "likes": 303,
+                "comments": 21,
+                "saves": 120,
+                "profileVisits": 402
+              },
+              {
+                "date": "2026-06-14",
+                "reach": 2559,
+                "views": 4538,
+                "likes": 342,
+                "comments": 20,
+                "saves": 55,
+                "profileVisits": 417
+              },
+              {
+                "date": "2026-06-15",
+                "reach": 3759,
+                "views": 6075,
+                "likes": 308,
+                "comments": 19,
+                "saves": 70,
+                "profileVisits": 360
+              },
+              {
+                "date": "2026-06-16",
+                "reach": 3218,
+                "views": 5101,
+                "likes": 309,
+                "comments": 15,
+                "saves": 71,
+                "profileVisits": 365
+              },
+              {
+                "date": "2026-06-17",
+                "reach": 2737,
+                "views": 5186,
+                "likes": 164,
+                "comments": 16,
+                "saves": 103,
+                "profileVisits": 526
+              },
+              {
+                "date": "2026-06-18",
+                "reach": 3228,
+                "views": 5400,
+                "likes": 260,
+                "comments": 14,
+                "saves": 81,
+                "profileVisits": 526
+              },
+              {
+                "date": "2026-06-19",
+                "reach": 3597,
+                "views": 5092,
+                "likes": 446,
+                "comments": 17,
+                "saves": 107,
+                "profileVisits": 441
+              },
+              {
+                "date": "2026-06-20",
+                "reach": 3111,
+                "views": 6189,
+                "likes": 355,
+                "comments": 11,
+                "saves": 87,
+                "profileVisits": 449
+              },
+              {
+                "date": "2026-06-21",
+                "reach": 3513,
+                "views": 3990,
+                "likes": 167,
+                "comments": 8,
+                "saves": 93,
+                "profileVisits": 412
+              },
+              {
+                "date": "2026-06-22",
+                "reach": 3338,
+                "views": 4338,
+                "likes": 218,
+                "comments": 7,
+                "saves": 101,
+                "profileVisits": 445
+              },
+              {
+                "date": "2026-06-23",
+                "reach": 3597,
+                "views": 5274,
+                "likes": 270,
+                "comments": 24,
+                "saves": 92,
+                "profileVisits": 373
+              },
+              {
+                "date": "2026-06-24",
+                "reach": 2991,
+                "views": 4449,
+                "likes": 171,
+                "comments": 18,
+                "saves": 99,
+                "profileVisits": 394
+              },
+              {
+                "date": "2026-06-25",
+                "reach": 2914,
+                "views": 5023,
+                "likes": 365,
+                "comments": 18,
+                "saves": 84,
+                "profileVisits": 378
+              },
+              {
+                "date": "2026-06-26",
+                "reach": 3172,
+                "views": 4041,
+                "likes": 273,
+                "comments": 18,
+                "saves": 131,
+                "profileVisits": 486
+              },
+              {
+                "date": "2026-06-27",
+                "reach": 3613,
+                "views": 4372,
+                "likes": 313,
+                "comments": 12,
+                "saves": 101,
+                "profileVisits": 449
+              },
+              {
+                "date": "2026-06-28",
+                "reach": 2893,
+                "views": 5999,
+                "likes": 308,
+                "comments": 8,
+                "saves": 106,
+                "profileVisits": 391
+              },
+              {
+                "date": "2026-06-29",
+                "reach": 3200,
+                "views": 5079,
+                "likes": 299,
+                "comments": 7,
+                "saves": 71,
+                "profileVisits": 474
+              },
+              {
+                "date": "2026-06-30",
+                "reach": 3720,
+                "views": 5941,
+                "likes": 370,
+                "comments": 7,
+                "saves": 110,
+                "profileVisits": 285
+              }
+            ]
+          },
+          {
+            "platform": "YouTube",
+            "color": "#FF0000",
+            "subscribers": 5120,
+            "posts": [
+              5,
+              19
+            ],
+            "daily": [
+              {
+                "date": "2026-06-01",
+                "views": 2284,
+                "likes": 44,
+                "comments": 4,
+                "shares": 20,
+                "watchTimeMin": 4586
+              },
+              {
+                "date": "2026-06-02",
+                "views": 1232,
+                "likes": 44,
+                "comments": 5,
+                "shares": 12,
+                "watchTimeMin": 3920
+              },
+              {
+                "date": "2026-06-03",
+                "views": 2212,
+                "likes": 27,
+                "comments": 8,
+                "shares": 19,
+                "watchTimeMin": 3703
+              },
+              {
+                "date": "2026-06-04",
+                "views": 1863,
+                "likes": 44,
+                "comments": 5,
+                "shares": 14,
+                "watchTimeMin": 4258
+              },
+              {
+                "date": "2026-06-05",
+                "views": 1516,
+                "likes": 59,
+                "comments": 10,
+                "shares": 11,
+                "watchTimeMin": 3817
+              },
+              {
+                "date": "2026-06-06",
+                "views": 1564,
+                "likes": 54,
+                "comments": 7,
+                "shares": 13,
+                "watchTimeMin": 4089
+              },
+              {
+                "date": "2026-06-07",
+                "views": 1984,
+                "likes": 40,
+                "comments": 10,
+                "shares": 11,
+                "watchTimeMin": 4697
+              },
+              {
+                "date": "2026-06-08",
+                "views": 2001,
+                "likes": 40,
+                "comments": 5,
+                "shares": 8,
+                "watchTimeMin": 3755
+              },
+              {
+                "date": "2026-06-09",
+                "views": 1504,
+                "likes": 50,
+                "comments": 7,
+                "shares": 18,
+                "watchTimeMin": 5567
+              },
+              {
+                "date": "2026-06-10",
+                "views": 1807,
+                "likes": 26,
+                "comments": 6,
+                "shares": 11,
+                "watchTimeMin": 3306
+              },
+              {
+                "date": "2026-06-11",
+                "views": 1724,
+                "likes": 44,
+                "comments": 6,
+                "shares": 8,
+                "watchTimeMin": 3744
+              },
+              {
+                "date": "2026-06-12",
+                "views": 2336,
+                "likes": 40,
+                "comments": 5,
+                "shares": 10,
+                "watchTimeMin": 4772
+              },
+              {
+                "date": "2026-06-13",
+                "views": 1594,
+                "likes": 46,
+                "comments": 10,
+                "shares": 14,
+                "watchTimeMin": 5039
+              },
+              {
+                "date": "2026-06-14",
+                "views": 1634,
+                "likes": 53,
+                "comments": 5,
+                "shares": 10,
+                "watchTimeMin": 4917
+              },
+              {
+                "date": "2026-06-15",
+                "views": 2046,
+                "likes": 42,
+                "comments": 4,
+                "shares": 14,
+                "watchTimeMin": 3821
+              },
+              {
+                "date": "2026-06-16",
+                "views": 1522,
+                "likes": 35,
+                "comments": 8,
+                "shares": 3,
+                "watchTimeMin": 4416
+              },
+              {
+                "date": "2026-06-17",
+                "views": 1852,
+                "likes": 36,
+                "comments": 11,
+                "shares": 14,
+                "watchTimeMin": 3836
+              },
+              {
+                "date": "2026-06-18",
+                "views": 1598,
+                "likes": 48,
+                "comments": 3,
+                "shares": 10,
+                "watchTimeMin": 3821
+              },
+              {
+                "date": "2026-06-19",
+                "views": 1820,
+                "likes": 44,
+                "comments": 8,
+                "shares": 16,
+                "watchTimeMin": 4336
+              },
+              {
+                "date": "2026-06-20",
+                "views": 1705,
+                "likes": 29,
+                "comments": 10,
+                "shares": 14,
+                "watchTimeMin": 5070
+              },
+              {
+                "date": "2026-06-21",
+                "views": 1575,
+                "likes": 42,
+                "comments": 7,
+                "shares": 11,
+                "watchTimeMin": 4206
+              },
+              {
+                "date": "2026-06-22",
+                "views": 1285,
+                "likes": 50,
+                "comments": 9,
+                "shares": 16,
+                "watchTimeMin": 5549
+              },
+              {
+                "date": "2026-06-23",
+                "views": 1704,
+                "likes": 41,
+                "comments": 8,
+                "shares": 19,
+                "watchTimeMin": 3161
+              },
+              {
+                "date": "2026-06-24",
+                "views": 1945,
+                "likes": 27,
+                "comments": 0,
+                "shares": 3,
+                "watchTimeMin": 3370
+              },
+              {
+                "date": "2026-06-25",
+                "views": 2120,
+                "likes": 33,
+                "comments": 7,
+                "shares": 7,
+                "watchTimeMin": 4566
+              },
+              {
+                "date": "2026-06-26",
+                "views": 1469,
+                "likes": 55,
+                "comments": 5,
+                "shares": 8,
+                "watchTimeMin": 4273
+              },
+              {
+                "date": "2026-06-27",
+                "views": 1807,
+                "likes": 56,
+                "comments": 8,
+                "shares": 7,
+                "watchTimeMin": 3863
+              },
+              {
+                "date": "2026-06-28",
+                "views": 1628,
+                "likes": 49,
+                "comments": 9,
+                "shares": 11,
+                "watchTimeMin": 4721
+              },
+              {
+                "date": "2026-06-29",
+                "views": 1641,
+                "likes": 40,
+                "comments": 8,
+                "shares": 18,
+                "watchTimeMin": 4140
+              },
+              {
+                "date": "2026-06-30",
+                "views": 1694,
+                "likes": 31,
+                "comments": 10,
+                "shares": 9,
+                "watchTimeMin": 4406
+              }
+            ]
+          },
+          {
+            "platform": "TikTok",
+            "color": "#010101",
+            "followers": 12300,
+            "posts": [
+              8,
+              14,
+              11,
+              16,
+              9,
+              13
+            ],
+            "daily": [
+              {
+                "date": "2026-06-01",
+                "views": 6118,
+                "likes": 382,
+                "comments": 14,
+                "shares": 35,
+                "profileViews": 785
+              },
+              {
+                "date": "2026-06-02",
+                "views": 6798,
+                "likes": 315,
+                "comments": 22,
+                "shares": 33,
+                "profileViews": 814
+              },
+              {
+                "date": "2026-06-03",
+                "views": 10198,
+                "likes": 201,
+                "comments": 13,
+                "shares": 54,
+                "profileViews": 549
+              },
+              {
+                "date": "2026-06-04",
+                "views": 7933,
+                "likes": 327,
+                "comments": 26,
+                "shares": 42,
+                "profileViews": 689
+              },
+              {
+                "date": "2026-06-05",
+                "views": 7467,
+                "likes": 397,
+                "comments": 19,
+                "shares": 49,
+                "profileViews": 628
+              },
+              {
+                "date": "2026-06-06",
+                "views": 8527,
+                "likes": 309,
+                "comments": 21,
+                "shares": 32,
+                "profileViews": 759
+              },
+              {
+                "date": "2026-06-07",
+                "views": 10096,
+                "likes": 334,
+                "comments": 26,
+                "shares": 55,
+                "profileViews": 772
+              },
+              {
+                "date": "2026-06-08",
+                "views": 8764,
+                "likes": 332,
+                "comments": 27,
+                "shares": 45,
+                "profileViews": 582
+              },
+              {
+                "date": "2026-06-09",
+                "views": 8428,
+                "likes": 206,
+                "comments": 21,
+                "shares": 49,
+                "profileViews": 803
+              },
+              {
+                "date": "2026-06-10",
+                "views": 8581,
+                "likes": 375,
+                "comments": 21,
+                "shares": 32,
+                "profileViews": 538
+              },
+              {
+                "date": "2026-06-11",
+                "views": 7236,
+                "likes": 238,
+                "comments": 25,
+                "shares": 42,
+                "profileViews": 737
+              },
+              {
+                "date": "2026-06-12",
+                "views": 8488,
+                "likes": 382,
+                "comments": 28,
+                "shares": 37,
+                "profileViews": 652
+              },
+              {
+                "date": "2026-06-13",
+                "views": 7760,
+                "likes": 222,
+                "comments": 26,
+                "shares": 59,
+                "profileViews": 679
+              },
+              {
+                "date": "2026-06-14",
+                "views": 7808,
+                "likes": 385,
+                "comments": 7,
+                "shares": 47,
+                "profileViews": 694
+              },
+              {
+                "date": "2026-06-15",
+                "views": 7714,
+                "likes": 403,
+                "comments": 27,
+                "shares": 41,
+                "profileViews": 671
+              },
+              {
+                "date": "2026-06-16",
+                "views": 7934,
+                "likes": 289,
+                "comments": 14,
+                "shares": 61,
+                "profileViews": 782
+              },
+              {
+                "date": "2026-06-17",
+                "views": 9357,
+                "likes": 254,
+                "comments": 34,
+                "shares": 68,
+                "profileViews": 698
+              },
+              {
+                "date": "2026-06-18",
+                "views": 7314,
+                "likes": 268,
+                "comments": 24,
+                "shares": 34,
+                "profileViews": 676
+              },
+              {
+                "date": "2026-06-19",
+                "views": 9706,
+                "likes": 229,
+                "comments": 34,
+                "shares": 63,
+                "profileViews": 556
+              },
+              {
+                "date": "2026-06-20",
+                "views": 6703,
+                "likes": 302,
+                "comments": 15,
+                "shares": 41,
+                "profileViews": 421
+              },
+              {
+                "date": "2026-06-21",
+                "views": 8125,
+                "likes": 428,
+                "comments": 15,
+                "shares": 41,
+                "profileViews": 531
+              },
+              {
+                "date": "2026-06-22",
+                "views": 9165,
+                "likes": 306,
+                "comments": 33,
+                "shares": 47,
+                "profileViews": 642
+              },
+              {
+                "date": "2026-06-23",
+                "views": 9060,
+                "likes": 289,
+                "comments": 13,
+                "shares": 48,
+                "profileViews": 662
+              },
+              {
+                "date": "2026-06-24",
+                "views": 8599,
+                "likes": 342,
+                "comments": 18,
+                "shares": 50,
+                "profileViews": 853
+              },
+              {
+                "date": "2026-06-25",
+                "views": 7070,
+                "likes": 424,
+                "comments": 20,
+                "shares": 35,
+                "profileViews": 922
+              },
+              {
+                "date": "2026-06-26",
+                "views": 8586,
+                "likes": 402,
+                "comments": 26,
+                "shares": 24,
+                "profileViews": 692
+              },
+              {
+                "date": "2026-06-27",
+                "views": 7769,
+                "likes": 239,
+                "comments": 11,
+                "shares": 46,
+                "profileViews": 739
+              },
+              {
+                "date": "2026-06-28",
+                "views": 8868,
+                "likes": 301,
+                "comments": 17,
+                "shares": 33,
+                "profileViews": 624
+              },
+              {
+                "date": "2026-06-29",
+                "views": 7160,
+                "likes": 307,
+                "comments": 21,
+                "shares": 34,
+                "profileViews": 656
+              },
+              {
+                "date": "2026-06-30",
+                "views": 7487,
+                "likes": 319,
+                "comments": 25,
+                "shares": 47,
+                "profileViews": 727
+              }
+            ]
+          }
+        ]
+      },
+      "crossChannel": {
+        "note": "デモデータ。実際は自前ファーストパーティ計測(collect.py)＋GA4 UTM集計を結合して生成。",
+        "utm": [
+          {
+            "source": "instagram",
+            "medium": "social",
+            "campaign": "summer_reels",
+            "channel": "SNS(オーガニック)",
+            "sessions": 4820,
+            "conversions": 62,
+            "revenue": 682000
+          },
+          {
+            "source": "instagram",
+            "medium": "paid_social",
+            "campaign": "retarget_cart",
+            "channel": "広告",
+            "sessions": 2140,
+            "conversions": 51,
+            "revenue": 561000
+          },
+          {
+            "source": "google",
+            "medium": "cpc",
+            "campaign": "brand_search",
+            "channel": "指名検索",
+            "sessions": 3380,
+            "conversions": 87,
+            "revenue": 957000
+          },
+          {
+            "source": "mailchimp",
+            "medium": "email",
+            "campaign": "jun_main",
+            "channel": "メルマガ",
+            "sessions": 1960,
+            "conversions": 44,
+            "revenue": 484000
+          },
+          {
+            "source": "line",
+            "medium": "push",
+            "campaign": "member_push",
+            "channel": "LINE",
+            "sessions": 1240,
+            "conversions": 38,
+            "revenue": 418000
+          },
+          {
+            "source": "tiktok",
+            "medium": "social",
+            "campaign": "recipe_ugc",
+            "channel": "SNS(オーガニック)",
+            "sessions": 2680,
+            "conversions": 31,
+            "revenue": 341000
+          },
+          {
+            "source": "(direct)",
+            "medium": "(none)",
+            "campaign": "(not set)",
+            "channel": "直接/その他",
+            "sessions": 3910,
+            "conversions": 72,
+            "revenue": 792000
+          }
+        ],
+        "correlation": [
+          {
+            "month": "24/07",
+            "snsReach": 181032,
+            "gscBrandedImp": 28880,
+            "siteSessions": 39619
+          },
+          {
+            "month": "24/08",
+            "snsReach": 175268,
+            "gscBrandedImp": 28505,
+            "siteSessions": 44571
+          },
+          {
+            "month": "24/09",
+            "snsReach": 201475,
+            "gscBrandedImp": 29206,
+            "siteSessions": 41973
+          },
+          {
+            "month": "24/10",
+            "snsReach": 178604,
+            "gscBrandedImp": 28590,
+            "siteSessions": 42336
+          },
+          {
+            "month": "24/11",
+            "snsReach": 184429,
+            "gscBrandedImp": 28476,
+            "siteSessions": 45638
+          },
+          {
+            "month": "24/12",
+            "snsReach": 190850,
+            "gscBrandedImp": 32552,
+            "siteSessions": 46643
+          },
+          {
+            "month": "25/01",
+            "snsReach": 207967,
+            "gscBrandedImp": 29953,
+            "siteSessions": 50159
+          },
+          {
+            "month": "25/02",
+            "snsReach": 204900,
+            "gscBrandedImp": 33347,
+            "siteSessions": 48518
+          },
+          {
+            "month": "25/03",
+            "snsReach": 207777,
+            "gscBrandedImp": 32247,
+            "siteSessions": 45951
+          },
+          {
+            "month": "25/04",
+            "snsReach": 197153,
+            "gscBrandedImp": 34788,
+            "siteSessions": 49361
+          },
+          {
+            "month": "25/05",
+            "snsReach": 227132,
+            "gscBrandedImp": 33199,
+            "siteSessions": 46536
+          },
+          {
+            "month": "25/06",
+            "snsReach": 224148,
+            "gscBrandedImp": 32330,
+            "siteSessions": 48004
+          },
+          {
+            "month": "25/07",
+            "snsReach": 225444,
+            "gscBrandedImp": 33902,
+            "siteSessions": 56710
+          },
+          {
+            "month": "25/08",
+            "snsReach": 212954,
+            "gscBrandedImp": 36399,
+            "siteSessions": 53932
+          },
+          {
+            "month": "25/09",
+            "snsReach": 241117,
+            "gscBrandedImp": 34660,
+            "siteSessions": 53978
+          },
+          {
+            "month": "25/10",
+            "snsReach": 232147,
+            "gscBrandedImp": 36149,
+            "siteSessions": 58139
+          },
+          {
+            "month": "25/11",
+            "snsReach": 256229,
+            "gscBrandedImp": 36096,
+            "siteSessions": 56647
+          },
+          {
+            "month": "25/12",
+            "snsReach": 245430,
+            "gscBrandedImp": 38600,
+            "siteSessions": 60814
+          },
+          {
+            "month": "26/01",
+            "snsReach": 233354,
+            "gscBrandedImp": 36759,
+            "siteSessions": 58769
+          },
+          {
+            "month": "26/02",
+            "snsReach": 234770,
+            "gscBrandedImp": 37127,
+            "siteSessions": 53526
+          },
+          {
+            "month": "26/03",
+            "snsReach": 231947,
+            "gscBrandedImp": 38967,
+            "siteSessions": 59792
+          },
+          {
+            "month": "26/04",
+            "snsReach": 247063,
+            "gscBrandedImp": 38478,
+            "siteSessions": 61861
+          },
+          {
+            "month": "26/05",
+            "snsReach": 267618,
+            "gscBrandedImp": 40097,
+            "siteSessions": 62519
+          },
+          {
+            "month": "26/06",
+            "snsReach": 280624,
+            "gscBrandedImp": 42291,
+            "siteSessions": 62700
+          }
+        ],
+        "attribution": {
+          "first": [
+            {
+              "channel": "SNS(オーガニック)",
+              "revenue": 1100000,
+              "orders": 98
+            },
+            {
+              "channel": "広告",
+              "revenue": 820000,
+              "orders": 72
+            },
+            {
+              "channel": "指名検索",
+              "revenue": 680000,
+              "orders": 62
+            },
+            {
+              "channel": "メルマガ",
+              "revenue": 520000,
+              "orders": 48
+            },
+            {
+              "channel": "LINE",
+              "revenue": 380000,
+              "orders": 35
+            },
+            {
+              "channel": "直接/その他",
+              "revenue": 735000,
+              "orders": 68
+            }
+          ],
+          "last": [
+            {
+              "channel": "SNS(オーガニック)",
+              "revenue": 580000,
+              "orders": 51
+            },
+            {
+              "channel": "広告",
+              "revenue": 1120000,
+              "orders": 98
+            },
+            {
+              "channel": "指名検索",
+              "revenue": 740000,
+              "orders": 67
+            },
+            {
+              "channel": "メルマガ",
+              "revenue": 720000,
+              "orders": 65
+            },
+            {
+              "channel": "LINE",
+              "revenue": 580000,
+              "orders": 52
+            },
+            {
+              "channel": "直接/その他",
+              "revenue": 495000,
+              "orders": 45
+            }
+          ],
+          "linear": [
+            {
+              "channel": "SNS(オーガニック)",
+              "revenue": 810000,
+              "orders": 73
+            },
+            {
+              "channel": "広告",
+              "revenue": 940000,
+              "orders": 84
+            },
+            {
+              "channel": "指名検索",
+              "revenue": 710000,
+              "orders": 65
+            },
+            {
+              "channel": "メルマガ",
+              "revenue": 620000,
+              "orders": 57
+            },
+            {
+              "channel": "LINE",
+              "revenue": 480000,
+              "orders": 44
+            },
+            {
+              "channel": "直接/その他",
+              "revenue": 675000,
+              "orders": 60
+            }
+          ]
+        },
+        "journeys": [
+          {
+            "anonId": "C-1D6875EE4127",
+            "lastProduct": "デモ美容液(定期)",
+            "frequency": 4,
+            "touchpoints": [
+              {
+                "date": "2026-05-03",
+                "channel": "SNS(オーガニック)",
+                "action": "認知/フォロー"
+              },
+              {
+                "date": "2026-05-18",
+                "channel": "広告",
+                "action": "クリック"
+              },
+              {
+                "date": "2026-05-21",
+                "channel": "指名検索",
+                "action": "来訪"
+              },
+              {
+                "date": "2026-05-22",
+                "channel": "LINE",
+                "action": "購入"
+              }
+            ],
+            "converted": true,
+            "revenue": 11000
+          },
+          {
+            "anonId": "C-61EA51136A1E",
+            "lastProduct": "デモ化粧水",
+            "frequency": 2,
+            "touchpoints": [
+              {
+                "date": "2026-04-11",
+                "channel": "SNS(オーガニック)",
+                "action": "認知/動画視聴"
+              },
+              {
+                "date": "2026-05-02",
+                "channel": "メルマガ",
+                "action": "クリック"
+              },
+              {
+                "date": "2026-05-03",
+                "channel": "直接/その他",
+                "action": "購入"
+              }
+            ],
+            "converted": false,
+            "revenue": 0
+          },
+          {
+            "anonId": "C-D2BFC8025EA4",
+            "lastProduct": "デモクリーム",
+            "frequency": 4,
+            "touchpoints": [
+              {
+                "date": "2026-05-20",
+                "channel": "指名検索",
+                "action": "来訪"
+              },
+              {
+                "date": "2026-05-20",
+                "channel": "直接/その他",
+                "action": "購入"
+              }
+            ],
+            "converted": true,
+            "revenue": 11000
+          },
+          {
+            "anonId": "C-ED882B45E7D2",
+            "lastProduct": "デモ美容液",
+            "frequency": 2,
+            "touchpoints": [
+              {
+                "date": "2026-03-15",
+                "channel": "SNS(オーガニック)",
+                "action": "認知/フォロー"
+              },
+              {
+                "date": "2026-04-02",
+                "channel": "広告",
+                "action": "クリック"
+              },
+              {
+                "date": "2026-04-20",
+                "channel": "メルマガ",
+                "action": "クリック"
+              },
+              {
+                "date": "2026-05-01",
+                "channel": "指名検索",
+                "action": "来訪"
+              },
+              {
+                "date": "2026-05-01",
+                "channel": "LINE",
+                "action": "購入"
+              }
+            ],
+            "converted": true,
+            "revenue": 8800
+          },
+          {
+            "anonId": "C-3A5C1F2B33C2",
+            "lastProduct": "デモセット",
+            "frequency": 2,
+            "touchpoints": [
+              {
+                "date": "2026-05-08",
+                "channel": "広告",
+                "action": "クリック"
+              },
+              {
+                "date": "2026-05-09",
+                "channel": "指名検索",
+                "action": "来訪"
+              },
+              {
+                "date": "2026-05-10",
+                "channel": "直接/その他",
+                "action": "購入"
+              }
+            ],
+            "converted": true,
+            "revenue": 19800
+          },
+          {
+            "anonId": "C-C5EF56821A54",
+            "lastProduct": "デモクリーム",
+            "frequency": 4,
+            "touchpoints": [
+              {
+                "date": "2026-04-22",
+                "channel": "SNS(オーガニック)",
+                "action": "認知/動画視聴"
+              },
+              {
+                "date": "2026-05-14",
+                "channel": "LINE",
+                "action": "来訪"
+              },
+              {
+                "date": "2026-05-15",
+                "channel": "LINE",
+                "action": "購入"
+              }
+            ],
+            "converted": false,
+            "revenue": 0
+          },
+          {
+            "anonId": "C-1FC6480269F9",
+            "lastProduct": "デモ美容液(定期)",
+            "frequency": 3,
+            "touchpoints": [
+              {
+                "date": "2026-02-10",
+                "channel": "SNS(オーガニック)",
+                "action": "認知/フォロー"
+              },
+              {
+                "date": "2026-03-05",
+                "channel": "広告",
+                "action": "クリック"
+              },
+              {
+                "date": "2026-03-20",
+                "channel": "メルマガ",
+                "action": "クリック"
+              },
+              {
+                "date": "2026-04-01",
+                "channel": "メルマガ",
+                "action": "クリック"
+              },
+              {
+                "date": "2026-04-02",
+                "channel": "指名検索",
+                "action": "来訪"
+              },
+              {
+                "date": "2026-04-03",
+                "channel": "直接/その他",
+                "action": "購入"
+              }
+            ],
+            "converted": true,
+            "revenue": 8800
+          },
+          {
+            "anonId": "C-DEF4A0B02146",
+            "lastProduct": "デモ美容液(定期)",
+            "frequency": 4,
+            "touchpoints": [
+              {
+                "date": "2026-05-25",
+                "channel": "指名検索",
+                "action": "来訪"
+              },
+              {
+                "date": "2026-05-25",
+                "channel": "指名検索",
+                "action": "購入"
+              }
+            ],
+            "converted": true,
+            "revenue": 19800
+          },
+          {
+            "anonId": "C-DCCFA5FE7BF8",
+            "lastProduct": "デモセット",
+            "frequency": 3,
+            "touchpoints": [
+              {
+                "date": "2026-04-18",
+                "channel": "SNS(オーガニック)",
+                "action": "認知/フォロー"
+              },
+              {
+                "date": "2026-05-08",
+                "channel": "広告",
+                "action": "クリック"
+              },
+              {
+                "date": "2026-05-19",
+                "channel": "LINE",
+                "action": "購入"
+              }
+            ],
+            "converted": false,
+            "revenue": 0
+          },
+          {
+            "anonId": "C-925BBAF60945",
+            "lastProduct": "デモ美容液",
+            "frequency": 3,
+            "touchpoints": [
+              {
+                "date": "2026-05-30",
+                "channel": "メルマガ",
+                "action": "クリック"
+              },
+              {
+                "date": "2026-05-30",
+                "channel": "直接/その他",
+                "action": "購入"
+              }
+            ],
+            "converted": true,
+            "revenue": 29700
+          },
+          {
+            "anonId": "C-6D99B031B1C7",
+            "lastProduct": "デモ美容液(定期)",
+            "frequency": 4,
+            "touchpoints": [
+              {
+                "date": "2026-03-01",
+                "channel": "SNS(オーガニック)",
+                "action": "認知/フォロー"
+              },
+              {
+                "date": "2026-04-10",
+                "channel": "広告",
+                "action": "クリック"
+              },
+              {
+                "date": "2026-05-20",
+                "channel": "指名検索",
+                "action": "来訪"
+              },
+              {
+                "date": "2026-06-02",
+                "channel": "LINE",
+                "action": "購入"
+              }
+            ],
+            "converted": true,
+            "revenue": 8800
+          },
+          {
+            "anonId": "C-65D5862B4810",
+            "lastProduct": "デモセット",
+            "frequency": 4,
+            "touchpoints": [
+              {
+                "date": "2026-06-01",
+                "channel": "直接/その他",
+                "action": "来訪"
+              },
+              {
+                "date": "2026-06-01",
+                "channel": "直接/その他",
+                "action": "購入"
+              }
+            ],
+            "converted": true,
+            "revenue": 19800
+          }
+        ]
+      }
     }
   },
   "monthly": {
@@ -15471,6 +17277,46 @@
         "準ロイヤル層を定期・サブスクへ誘導し購入頻度を向上",
         "セグメント別のメール出し分け",
         "高LTV層のLook-alikeで類似新規を獲得"
+      ]
+    },
+    "awareness": {
+      "strategy": "施策別の認知効果をGSC指名検索リフト率で可視化し、効率の高い施策タイプに予算を集中する",
+      "status": "warn",
+      "assessment": "インフルエンサー施策が指名検索リフト率で最も効果を示しているが、投資対効果の定量評価が不十分。施策間の比較基準（estImpLift÷投稿インプ）は整備できてきた段階。",
+      "nextActions": [
+        "施策後の指名検索リフト率が高い媒体タイプに次回予算を優先配分する",
+        "タイアップ後フォロワーのLTV追跡を開始し、認知の収益貢献を可視化する",
+        "GSC指名検索数をSNS施策との相関でチャネル回遊タブから月次トラッキングする"
+      ]
+    },
+    "branded": {
+      "strategy": "指名比率のトレンドを認知施策・広告の先行指標として活用し、ブランド認知の強度を月次で追う",
+      "status": "good",
+      "assessment": "指名表示回数は月次上昇トレンドで掲載順位1位台を安定維持。指名比率10.7%はブランド認知として一定水準。非指名流入も増加しており認知の裾野が広がっている。",
+      "nextActions": [
+        "指名CTRの月次変化を追い、LPや検索結果タイトルの品質劣化を早期検知する",
+        "非指名クエリ上位からコンテンツSEOのテーマを特定し新規流入を拡大する",
+        "広告のブランドKW入稿でブランド名検索からの取りこぼしがないか確認する"
+      ]
+    },
+    "sns": {
+      "strategy": "SNSリーチを指名検索・来訪への認知導線として定量評価し、コンテンツ投資の優先度を決める",
+      "status": "warn",
+      "assessment": "Instagramリーチが最大だがエンゲージメント率の把握は途上。YouTubeは登録者5,120でリーチ効率が高い。TikTok再生数は高いが自社EC来訪への転換が未計測のため投資判断できない状態。",
+      "nextActions": [
+        "SNSリーチ × 指名検索imp の相関をチャネル回遊タブで月次確認し認知効果を数値化する",
+        "Instagramの保存数（saves）が高い投稿フォーマットを特定し再現性を高める",
+        "TikTokプロフURLに計測パラメータを付与し来訪・CVRを可視化する"
+      ]
+    },
+    "journey": {
+      "strategy": "ラストタッチで購入直前チャネルを特定し、CVに直結する施策への投資を集中する",
+      "status": "warn",
+      "assessment": "UTMデータでは指名検索のCVRが最高。SNSオーガニックはセッション数は多いがCVRが低く「SNS認知→指名検索→購入」の回遊が主パターンと推測。個人ジャーニーは計測スニペット稼働後に実データ検証が必要。",
+      "nextActions": [
+        "計測スニペットを自社ECに実装し個人ジャーニーの実データ蓄積を開始する（遡及不可のため最優先）",
+        "ラストタッチCVR最高チャネル（指名検索）の表示回数拡大に広告予算を優先配分する",
+        "SNS→指名検索→購入の導線でLPの離脱箇所を特定し改善する"
       ]
     }
   }
