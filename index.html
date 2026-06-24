@@ -1154,16 +1154,24 @@ function awarenessKpiCtx(c){
   const now=new Date();
   const pendingCount=camps.filter(cm=>{const e=new Date(cm.end||cm.start);return(now-e)/86400000<getLag(cm.type);}).length;
   const liftRange=liftRates.length>1?(Math.max(...liftRates)-Math.min(...liftRates)):0;
+  const badCount=liftRates.filter(r=>r<0).length;
+  const worstIdx=liftRates.indexOf(Math.min(...liftRates));
+  const bestIdx=liftRates.indexOf(Math.max(...liftRates));
+  const worstCampName=camps[worstIdx]?camps[worstIdx].name:'—';
+  const worstLiftRate=liftRates[worstIdx]!=null?liftRates[worstIdx]:0;
+  const bestCampName=camps[bestIdx]?camps[bestIdx].name:'—';
+  const bestCampLift=liftRates[bestIdx]!=null?liftRates[bestIdx]:0;
   return{totalCamps:camps.length,pendingCount,medianLiftRate,liftRange,
-    bestType:bestType?bestType.type:'—',bestTypeMed:bestType?bestType.med:0,bestTypeCnt:bestType?bestType.cnt:0,secondTypeMed:secType?secType.med:0};
+    bestType:bestType?bestType.type:'—',bestTypeMed:bestType?bestType.med:0,bestTypeCnt:bestType?bestType.cnt:0,secondTypeMed:secType?secType.med:0,
+    badCount,worstCampName,worstLiftRate,bestCampName,bestCampLift};
 }
 const AWARENESS_RULES=[
   {id:'r0',when:c=>c.totalCamps>0&&c.pendingCount>=Math.ceil(c.totalCamps/2),status:'warn',
     fact:'{pendingCount}件が計測ウィンドウ未達（インフルエンサー7日・PR14日）のため評価精度が低い。',
     actions:['[計測待機] タイプ別ラグを満たす日付以降に再評価する','[設計変更] 施策終了後のラグ（インフルエンサー7日/PR14日）を運用フローに組み込む']},
   {id:'r1',when:c=>c.medianLiftRate<0,status:'bad',
-    fact:'施策後の指名検索リフト中央値が{medianLiftRate}%。全{totalCamps}件の施策が逆効果または効果なし。',
-    actions:['[設計変更] 過去施策のコンテンツと指名検索変動を照合し、訴求軸（成分/体験/ビフォーアフター）と媒体の組み合わせを見直す','[コンテンツ] 次回施策にブランド名を明示的に含め、視聴後に指名検索が起きやすい構成に変える']},
+    fact:'{totalCamps}件中{badCount}件がマイナスリフト（最低: {worstCampName} {worstLiftRateSigned}% / 中央値{medianLiftRate}%）。過半数の施策が指名検索を動かせていない。',
+    actions:['[設計変更] 今週中にマイナス施策のコンテンツを確認し、ブランド名の明示有無・訴求軸（成分/体験/ビフォーアフター）・媒体の組み合わせを洗い出す','[コンテンツ] 次回施策でブランド名を冒頭・末尾に明示し、施策後14日間の指名imp変動を計測する']},
   {id:'r3',when:c=>c.bestTypeMed>0&&c.secondTypeMed>0&&c.bestTypeMed>=c.secondTypeMed*2&&c.bestTypeCnt>=3,status:'good',
     fact:'{bestType}の指名検索リフト効率（中央値{bestTypeMed}）が他タイプ（{secondTypeMed}）の2倍以上（サンプル{bestTypeCnt}件）。集中投資が有効。',
     actions:['[予算配分] 次回施策予算の50%以上を{bestType}に配分し、低効率タイプへの新規発注を停止する','[コンテンツ] {bestType}施策を今月さらに追加し効率の再現性を検証する']},
@@ -1171,13 +1179,15 @@ const AWARENESS_RULES=[
     fact:'{totalCamps}件の施策の指名検索リフト中央値{medianLiftRate}%。有効な施策パターンが確認できている。',
     actions:['[コンテンツ] 今週中に{bestType}の発注先候補を3件選定し、見積もりまたは条件確認の連絡を入れる','[計測] 毎施策後に同じ計測方式（施策前後日次平均比）でリフト率を記録し、タイプ別比較を蓄積する']},
   {id:'r4',when:c=>c.totalCamps>=3&&c.liftRange<2&&c.pendingCount<Math.ceil(c.totalCamps/3),status:'warn',
-    fact:'全{totalCamps}件の施策リフト率の差が{liftRange}%以内。同じ訴求・タイプを繰り返しており差別化が不十分。',
-    actions:['[設計変更] 訴求軸（成分/体験/ビフォーアフター）または媒体タイプを意図的に変えたABテストを設計する','[コンテンツ] 現在の主力施策タイプ以外を最低1件試して効率比較データを取る']},
+    fact:'全{totalCamps}件の施策リフト率が中央値{medianLiftRate}%・ばらつき{liftRange}%以内。同じ訴求・タイプを繰り返しており、効果が良くても悪くても原因を切り分けられない。',
+    actions:['[設計変更] 訴求軸（成分/体験/ビフォーアフター）または媒体タイプを意図的に変えたABテストを今月中に設計する','[コンテンツ] 主力施策タイプ以外を最低1件試し、タイプ別比較データを取る']},
 ];
 function awarenessFbHtml(c){
   const ctx=awarenessKpiCtx(c); if(!ctx)return '';
   const ST={good:['🟢','良好','#1a7f37','rgba(26,127,55,.10)'],warn:['🟡','注意','#9a6700','rgba(154,103,0,.10)'],bad:['🔴','課題','#cf222e','rgba(207,34,46,.10)'],info:['⚪','参考','#57606a','rgba(87,96,106,.10)']};
-  const fc={...ctx,medianLiftRate:ctx.medianLiftRate.toFixed(1),liftRange:ctx.liftRange.toFixed(1),bestTypeMed:ctx.bestTypeMed.toFixed(2),secondTypeMed:ctx.secondTypeMed.toFixed(2)};
+  const fc={...ctx,medianLiftRate:ctx.medianLiftRate.toFixed(1),liftRange:ctx.liftRange.toFixed(1),bestTypeMed:ctx.bestTypeMed.toFixed(2),secondTypeMed:ctx.secondTypeMed.toFixed(2),
+    worstLiftRateSigned:(ctx.worstLiftRate>=0?'+':'')+ctx.worstLiftRate.toFixed(1),
+    bestCampLiftSigned:(ctx.bestCampLift>=0?'+':'')+ctx.bestCampLift.toFixed(1)};
   const matched=AWARENESS_RULES.filter(r=>r.when(ctx));
   if(!matched.length)return '';
   const ord={bad:0,warn:1,info:2,good:3};
@@ -1216,22 +1226,27 @@ function brandedKpiCtx(c){
   const camps=c.awarenessCampaigns||[];
   const now=new Date();
   const recentAwarenessCnt=camps.filter(cm=>(now-new Date(cm.end||cm.start))/86400000<=60).length;
+  // 連続下落ヶ月数と加速判定
+  const monthGrowths=mo.map((m,i)=>i===0?0:(mo[i-1].brandedImp>0?(m.brandedImp/mo[i-1].brandedImp-1)*100:0));
+  let downMonths=0;
+  for(let i=monthGrowths.length-1;i>=1;i--){if(monthGrowths[i]<0)downMonths++;else break;}
+  const trendAccelLabel=downMonths>=2?(monthGrowths[monthGrowths.length-1]<monthGrowths[monthGrowths.length-2]?'加速中':'横ばい'):'単月';
   return{brandedDelta,nonbrandedDelta,trendDir,posLevel,latestPos:latestPos.toFixed(1),
-    ratioNow:ratioNow.toFixed(1),ratioDelta:ratioDelta.toFixed(1),recentAwarenessCnt};
+    ratioNow:ratioNow.toFixed(1),ratioDelta:ratioDelta.toFixed(1),recentAwarenessCnt,downMonths,trendAccelLabel};
 }
 const BRANDED_RULES=[
   {id:'r1',when:c=>c.trendDir==='up'&&c.posLevel==='stable',status:'good',
     fact:'指名imp前期比+{brandedDelta}%・掲載順位{latestPos}位で安定成長。現状の認知施策と広告ブランドKW入稿が機能している。',
     actions:['[予算配分] 現在の認知施策投資額を維持し、指名imp成長が前期比+3%以下に2ヶ月連続で低下したタイミングで増額を検討する','[CRM] 定期購入者に指名検索→購入体験のレビューを依頼し、UGCによる指名検索強化につなげる']},
   {id:'r2',when:c=>c.trendDir==='down'&&c.recentAwarenessCnt===0,status:'bad',
-    fact:'指名imp前期比{brandedDelta}%減。直近60日の認知施策が0件。認知施策の再開が最も早い回復手段。',
-    actions:['[コンテンツ] 今月中にインフルエンサー施策またはUGCキャンペーンを最低1件実施する','[予算配分] 認知施策予算を再確保し、月1件以上の施策継続を運用ルールとして設定する']},
+    fact:'指名imp前期比{brandedDelta}%（{downMonths}ヶ月連続・{trendAccelLabel}）。直近60日の認知施策が0件。施策のリードタイム2〜4週を考慮すると今週中に発注先を動かす必要がある。',
+    actions:['[コンテンツ] 今週中にインフルエンサーまたはUGCの発注先を選定し見積を取る（施策開始まで2〜4週のリードタイム）','[予算配分] 認知施策予算を再確保し月1件以上の継続を運用ルールとして設定する']},
   {id:'r3',when:c=>c.nonbrandedDelta>5&&c.ratioDelta<-3,status:'warn',
-    fact:'非指名imp+{nonbrandedDelta}%で新規流入は増加しているが、指名比率が{ratioNow}%（前期比{ratioDelta}%）に低下。新規認知は取れているがブランド名が定着していない。',
-    actions:['[コンテンツ] 投稿・広告クリエイティブにブランド名を冒頭・末尾で明示するルールを設定する','[CRM] 初回購入後7日以内にブランドストーリーメールを送り、ブランド名定着を促す']},
+    fact:'非指名imp+{nonbrandedDelta}%で新規流入は増加しているが、指名比率が{ratioNow}%（前期比{ratioDelta}%）に低下。新規認知は取れているがブランド名の定着に課題がある。',
+    actions:['[コンテンツ] 投稿・広告クリエイティブにブランド名を冒頭・末尾で明示するルールを設定する','[設計変更] 非指名経由セッションのCVRと直帰率を確認し、コンテンツ品質の問題か認知深度の問題かを切り分ける']},
   {id:'r4',when:c=>c.posLevel==='risk',status:'warn',
-    fact:'指名掲載順位が{latestPos}位に後退。ブランド名KWで競合広告が入り込んでいる可能性がある。',
-    actions:['[予算配分] Google広告でブランド名KWの入札単価を引き上げ、インプレッションシェアを90%以上に回復させる','[設計変更] Search Consoleでブランド名の正確なクエリを確認し、競合混入の有無を特定する']},
+    fact:'指名掲載順位が{latestPos}位に後退。競合広告の混入・クリック率低下・表記揺れなど複数の原因が考えられる。',
+    actions:['[設計変更] 今週中にSearch Consoleでブランド名クエリを確認し、競合混入・クリック率低下・表記揺れのどれが原因かを特定する','[予算配分] 競合混入が確認された場合のみGoogle広告の入札単価を引き上げてインプレッションシェアを回復させる']},
 ];
 function brandedFbHtml(c){
   const ctx=brandedKpiCtx(c); if(!ctx)return '';
@@ -1292,6 +1307,7 @@ function snsKpiCtx(c){
   const bestGrowth=platforms.reduce((a,b)=>b.rppGrowth>a.rppGrowth?b:a,platforms[0]);
   const engDrop=platforms.filter(p=>p.rppGrowth>5&&p.engDelta<-0.5);
   const maxDeclinePct=Math.abs(Math.min(...platforms.map(p=>p.rppGrowth)));
+  const platformDeclineStr=[...platforms].sort((a,b)=>a.rppGrowth-b.rppGrowth).map(p=>`${p.platform}:${p.rppGrowth>=0?'+':''}${p.rppGrowth.toFixed(1)}%`).join(' / ');
   // UTM設定済みの場合: crossChannel.utm からSNSオーガニック CVR・売上を取得
   let igCvr=0,tiktokCvr=0,paidSnsCvr=0,igRev=0,tiktokRev=0,igSessions=0,tiktokSessions=0,mailCvr=0,lineCvr=0;
   const cc=c.crossChannel;
@@ -1315,18 +1331,18 @@ function snsKpiCtx(c){
   const tiktokRppVal=tiktokP?tiktokP.rpp:0;
   return{utmMissing,platforms,hasReliablePostCount,
     highPlatform:highP.platform,highRpp:highP.rpp,lowPlatform:lowP.platform,lowRpp:lowP.rpp,pRatio,
-    freqDrop:freqDrop.map(p=>p.platform),bestGrowth,engDrop,maxDeclinePct,
+    freqDrop:freqDrop.map(p=>p.platform),bestGrowth,engDrop,maxDeclinePct,platformDeclineStr,
     igCvr,tiktokCvr,paidSnsCvr,igRev,tiktokRev,igSessions,tiktokSessions,
     totalSnsSessions,avgSnsCvr,mailCvr,lineCvr,igRpp,tiktokRppVal};
 }
 const SNS_RULES=[
   // R0: 全プラットフォームでリーチ/再生数が前半比マイナス → bad
   {id:'r0',when:c=>c.platforms.length>0&&c.platforms.every(p=>p.rppGrowth<0),status:'bad',
-    fact:'全プラットフォームで1件リーチ/再生数が前半比マイナス（最大{maxDeclinePct}%減）。アルゴリズム変化またはコンテンツ品質の低下が疑われる。',
-    actions:['[コンテンツ] 前半に反応の良かった投稿フォーマット・テーマを確認し、後半で変えた点を洗い出す','[設計変更] 全プラットフォームの投稿時間帯・ハッシュタグセットを見直し、翌週から計測する']},
-  // R1: SNSオーガニックCVRが有料SNSの半分程度で低水準 → warn
-  {id:'r1',when:c=>c.totalSnsSessions>0&&c.avgSnsCvr>0&&c.avgSnsCvr<1.5&&c.paidSnsCvr>0,status:'warn',
-    fact:'SNSオーガニック平均CVR{avgSnsCvrPct}%に対し、SNS有料{paidSnsCvrPct}%・メルマガ{mailCvrPct}%。オーガニックコンテンツが購買意向に転換されにくい状態。',
+    fact:'全プラットフォームで1件リーチが前半比マイナス（{platformDeclineStr}）。投稿頻度が前半と変わっていなければアルゴリズム変化またはコンテンツ品質の低下が疑われる。',
+    actions:['[コンテンツ] まず前半と後半の投稿数が変化していないか確認する。頻度低下があれば頻度回復が先。同じなら前半で反応が良かったフォーマット・テーマを特定し後半で変えた点を洗い出す','[設計変更] 全プラットフォームの投稿時間帯・ハッシュタグセットを見直し翌週から計測する']},
+  // R1: SNSオーガニックCVRが自社有料SNSの70%未満 → warn
+  {id:'r1',when:c=>c.totalSnsSessions>0&&c.avgSnsCvr>0&&c.paidSnsCvr>0&&c.avgSnsCvr<c.paidSnsCvr*0.7,status:'warn',
+    fact:'SNSオーガニック平均CVR{avgSnsCvrPct}%は自社SNS有料（{paidSnsCvrPct}%）の{cvrRatioPct}%水準。同じ訴求先にもかかわらずオーガニックが転換されにくい状態。',
     actions:['[コンテンツ] 成分説明・使用感・ビフォーアフターなど保存・シェアされやすい教育コンテンツを週2本以上組み込む','[LP改修] SNS流入ページのヒートマップを計測し、スクロール深度と離脱ポイントを特定する']},
   // R2: TikTokのリーチ効率はInstagramを大きく上回るが収益貢献は逆転 → warn
   {id:'r2',when:c=>c.tiktokRppVal>0&&c.igRpp>0&&c.tiktokRppVal>c.igRpp*1.5&&c.igRev>c.tiktokRev*1.5,status:'warn',
@@ -1360,7 +1376,9 @@ function snsFbHtml(c){
     maxDeclinePct:ctx.maxDeclinePct.toFixed(1),
     avgSnsCvrPct:ctx.avgSnsCvr.toFixed(2),
     paidSnsCvrPct:ctx.paidSnsCvr.toFixed(2),
+    cvrRatioPct:ctx.paidSnsCvr>0?Math.round(ctx.avgSnsCvr/ctx.paidSnsCvr*100)+'':'—',
     mailCvrPct:ctx.mailCvr.toFixed(2),
+    platformDeclineStr:ctx.platformDeclineStr||'',
     igRevMan:String(Math.round(ctx.igRev/10000)),
     tiktokRevMan:String(Math.round(ctx.tiktokRev/10000)),
     totalSnsRevMan:String(Math.round((ctx.igRev+ctx.tiktokRev)/10000)),
@@ -1428,7 +1446,12 @@ function journeyKpiCtx(c){
     }).filter(x=>x.cvr>0).sort((a,b)=>b.score-a.score);
     topPair=scored[0]||null;
   }
-  return{channels,topCh:topCh?topCh.channel:'—',topChShare,cvrMed,sessMed,expandChs,cvrImprChs,shrinkChs,topPair,hasJourneyData:journeys.length>0};
+  const cvrImprChsDetail=mergeByChannel(channels.filter(ch=>ch.quadrant==='CVR改善')).sort((a,b)=>a.cvr-b.cvr).map(ch=>ch.channel+':'+ch.cvr.toFixed(2)+'%').join(' / ');
+  const shrinkAvgCvr=shrinkChs.length>0?shrinkChs.reduce((s,ch)=>s+ch.cvr,0)/shrinkChs.length:0;
+  const shrinkAvgSess=shrinkChs.length>0?shrinkChs.reduce((s,ch)=>s+ch.sessions,0)/shrinkChs.length:0;
+  const shrinkCvrRatio=cvrMed>0?Math.round(shrinkAvgCvr/cvrMed*100):0;
+  const shrinkSessRatio=sessMed>0?Math.round(shrinkAvgSess/sessMed*100):0;
+  return{channels,topCh:topCh?topCh.channel:'—',topChShare,cvrMed,sessMed,expandChs,cvrImprChs,shrinkChs,topPair,hasJourneyData:journeys.length>0,cvrImprChsDetail,shrinkCvrRatio,shrinkSessRatio};
 }
 const JOURNEY_RULES=[
   {id:'r1',when:c=>c.topChShare>40&&c.expandChs.length>0,status:'warn',
@@ -1438,11 +1461,11 @@ const JOURNEY_RULES=[
     fact:'{topPairStr}の{topPairTouch}タッチ導線がCV率{topPairCvr}%・平均{topPairRevenue}円/CVで最効率。この入口への投資が最優先。',
     actions:['[予算配分] {topPairFirstCh}チャネルへの投資を最優先で設定し、他チャネルより先に予算・工数を配分する','[LP改修] {topPairStr}の導線で離脱しているページがないかヒートマップで確認する']},
   {id:'r4',when:c=>c.cvrImprChs.length>=2,status:'bad',
-    fact:'{cvrImprChsStr}はセッションがあるがCVRが中央値（{cvrMedFixed}%）以下。LP・カゴ落ちに共通ボトルネックがある可能性が高い。',
-    actions:['[LP改修] CVR改善対象チャネルに共通するLPのヒートマップを計測し離脱箇所を特定する','[LP改修] チェックアウト離脱率を確認し、送料表示・入力ステップを見直す']},
+    fact:'{cvrImprChsStr}はセッションがあるがCVR（{cvrImprChsDetail}）がいずれも中央値{cvrMedFixed}%以下。LP・カゴ落ちに共通ボトルネックがある可能性が高い。',
+    actions:['[LP改修] まず該当チャネルのGoogle Analytics離脱率とステップ別ドロップ率を確認し、どのステップに共通ボトルネックがあるか特定する','[LP改修] ボトルネックを特定してから対象LP・チェックアウトページのヒートマップを計測して改善箇所を絞り込む']},
   {id:'r5',when:c=>c.shrinkChs.length>0,status:'bad',
-    fact:'{shrinkChsStr}はCVR・セッションとも中央値以下（縮小検討）。現時点では投資対効果が出ていない。過去3ヶ月分のトレンドデータがあれば停止判断が可能。',
-    actions:['[予算配分] {shrinkChsStr}への広告費を最小化または停止し、{topCh}への集中配分を増やす','[設計変更] 縮小検討チャネルを停止後、解放リソースを拡大象限チャネルに再配分する計画を立てる']},
+    fact:'{shrinkChsStr}はCVR（中央値比{shrinkCvrRatioPct}%）・セッション（中央値比{shrinkSessRatioPct}%）がともに中央値以下。現時点では投資対効果が出ていない。',
+    actions:['[設計変更] まず{shrinkChsStr}の流入元クリエイティブやキーワードを確認し、停止すべき配信設定かコンテンツ改善で回復できるかを切り分ける','[予算配分] 停止が妥当と判断した場合のみ広告費を最小化し、解放したリソースを拡大象限チャネルへ再配分する']},
 ];
 function journeyFbHtml(c){
   const ctx=journeyKpiCtx(c); if(!ctx)return '';
@@ -1463,7 +1486,10 @@ function journeyFbHtml(c){
     topPairFirstCh:ctx.topPair?ctx.topPair.pair.split('→')[0]:'—',
     cvrImprChsStr:ctx.cvrImprChs.map(ch=>ch.channel).join('・'),
     cvrMedFixed:ctx.cvrMed.toFixed(2),
+    cvrImprChsDetail:ctx.cvrImprChsDetail||'',
     shrinkChsStr:ctx.shrinkChs.map(ch=>ch.channel).join('・'),
+    shrinkCvrRatioPct:String(ctx.shrinkCvrRatio),
+    shrinkSessRatioPct:String(ctx.shrinkSessRatio),
   };
   const fallback=!ctx.hasJourneyData?'<div style="padding:8px 12px;background:rgba(87,96,106,.08);border-radius:6px;font-size:12px;margin-bottom:10px">ℹ️ 個人ジャーニーデータなし — 回遊スコアはラストタッチCVRのみで評価</div>':'';
   const matched=JOURNEY_RULES.filter(r=>r.when(ctx));
