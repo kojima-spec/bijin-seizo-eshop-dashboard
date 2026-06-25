@@ -1074,6 +1074,57 @@ function redrawMetric(){
   mkChart('p-metric',{data:{labels:mo,datasets},options:{maintainAspectRatio:false,plugins:{legend:{position:'bottom',labels:{boxWidth:12,font:{size:11}}}},scales}});
 }
 /* ============ 認知施策タブ ============ */
+function _awarenessKpiInner(camps){
+  if(!camps.length) return '<div class="rpp-stat" style="grid-column:1/-1"><div class="l">選択期間に施策データがありません</div><div class="v" style="font-size:14px">—</div></div>';
+  const totalImpLift=camps.reduce((s,cm)=>s+(cm.estImpLift||0),0);
+  const liftRates=camps.map(cm=>cm.gscImpBefore>0?((cm.gscImpAfter-cm.gscImpBefore)/cm.gscImpBefore*100):0);
+  const avgLiftRate=liftRates.length?liftRates.reduce((s,v)=>s+v,0)/liftRates.length:0;
+  const typeEff={};
+  camps.forEach(cm=>{const eff=cm.postImpressions>0?(cm.estImpLift/cm.postImpressions):0;if(!typeEff[cm.type])typeEff[cm.type]={sum:0,cnt:0};typeEff[cm.type].sum+=eff;typeEff[cm.type].cnt++;});
+  const bestType=Object.entries(typeEff).sort((a,b)=>(b[1].sum/b[1].cnt)-(a[1].sum/a[1].cnt))[0];
+  return `<div class="rpp-stat"><div class="l">総施策数</div><div class="v">${camps.length}<small style="font-size:13px">件</small></div></div>
+    <div class="rpp-stat"><div class="l">総インプ増加（推定）</div><div class="v">${fmtNum(totalImpLift)}<small style="font-size:12px"> imp</small></div></div>
+    <div class="rpp-stat"><div class="l">平均指名検索リフト率</div><div class="v">${avgLiftRate.toFixed(1)}<small style="font-size:13px">%</small></div></div>
+    <div class="rpp-stat"><div class="l">最も効率的な施策タイプ</div><div class="v" style="font-size:16px">${esc(bestType?bestType[0]:'—')}</div></div>`;
+}
+function _awarenessCampTableInner(camps){
+  if(!camps.length) return '<div class="note">選択期間に施策がありません。</div>';
+  const sorted=[...camps].sort((a,b)=>{const ea=a.postImpressions>0?(a.estImpLift/a.postImpressions):0,eb=b.postImpressions>0?(b.estImpLift/b.postImpressions):0;return eb-ea;});
+  let h='<table class="tbl"><thead><tr><th>施策名</th><th>種類</th><th>媒体</th><th>期間</th><th class="num">投稿インプ</th><th class="num">いいね</th><th class="num">保存</th><th class="num">指名検索リフト率</th><th class="num">インプ増加(推定)</th><th class="num">効率</th></tr></thead><tbody>';
+  sorted.forEach(cm=>{
+    const liftRate=cm.gscImpBefore>0?((cm.gscImpAfter-cm.gscImpBefore)/cm.gscImpBefore*100):0;
+    const eff=cm.postImpressions>0?(cm.estImpLift/cm.postImpressions):0;
+    const liftCls=liftRate>=10?'b-green':liftRate>=0?'b-blue':'b-red';
+    h+=`<tr><td>${esc(cm.name)}</td><td><span class="badge b-gray">${esc(cm.type)}</span></td><td>${esc(cm.platform)}</td><td style="white-space:nowrap">${esc(cm.start)}〜${esc(cm.end)}</td><td class="num">${fmtNum(cm.postImpressions)}</td><td class="num">${fmtNum(cm.likes)}</td><td class="num">${fmtNum(cm.saves)}</td><td class="num"><span class="badge ${liftCls}">${liftRate>=0?'+':''}${liftRate.toFixed(1)}%</span></td><td class="num">${fmtNum(cm.estImpLift)}</td><td class="num">${eff.toFixed(2)}</td></tr>`;
+  });
+  h+='</tbody></table><div class="note" style="margin-top:8px">効率 = estImpLift ÷ 投稿インプ。指名検索リフト率 = (施策後日次平均 − 施策前日次平均) ÷ 施策前日次平均 × 100。デモデータ。</div>';
+  return h;
+}
+function _brandedKpiInner(monthly){
+  if(!monthly.length) return '<div class="rpp-stat" style="grid-column:1/-1"><div class="l">選択期間にデータがありません</div><div class="v" style="font-size:14px">—</div></div>';
+  const totalBrImp=monthly.reduce((s,m)=>s+(m.brandedImp||0),0);
+  const totalBrClicks=monthly.reduce((s,m)=>s+(m.brandedClicks||0),0);
+  const totalNbImp=monthly.reduce((s,m)=>s+(m.nonbrandedImp||0),0);
+  const brRatio=(totalBrImp+totalNbImp)>0?(totalBrImp/(totalBrImp+totalNbImp)*100).toFixed(1):'0.0';
+  const avgPos=monthly.length>0?(monthly.reduce((s,m)=>s+(m.brandedPosition||0),0)/monthly.length).toFixed(1):'—';
+  const pLabel=monthly.length===1?monthly[0].month:`${monthly[0].month}〜${monthly[monthly.length-1].month}`;
+  return `<div class="rpp-stat"><div class="l">指名表示回数（${pLabel}）</div><div class="v">${fmtNum(totalBrImp)}<small style="font-size:12px"> imp</small></div></div>
+    <div class="rpp-stat"><div class="l">指名クリック数（${pLabel}）</div><div class="v">${fmtNum(totalBrClicks)}</div></div>
+    <div class="rpp-stat"><div class="l">指名比率（imp）</div><div class="v">${brRatio}<small style="font-size:13px">%</small></div></div>
+    <div class="rpp-stat"><div class="l">指名掲載順位（平均）</div><div class="v">${avgPos}<small style="font-size:13px">位</small></div></div>`;
+}
+function _snsPlatTableInner(platforms){
+  let h='<table class="tbl"><thead><tr><th>プラットフォーム</th><th class="num">合計リーチ/再生</th><th class="num">いいね</th><th class="num">コメント</th><th class="num">シェア/保存</th></tr></thead><tbody>';
+  platforms.forEach(p=>{
+    const reach=p.daily.reduce((s,d)=>s+(d.reach||d.views||0),0);
+    const likes=p.daily.reduce((s,d)=>s+(d.likes||0),0);
+    const comments=p.daily.reduce((s,d)=>s+(d.comments||0),0);
+    const sv=p.daily.reduce((s,d)=>s+(d.saves||d.shares||0),0);
+    h+=`<tr><td><span style="display:inline-block;width:10px;height:10px;background:${esc(p.color)};border-radius:50%;margin-right:6px;vertical-align:middle"></span>${esc(p.platform)}</td><td class="num">${fmtNum(reach)}</td><td class="num">${fmtNum(likes)}</td><td class="num">${fmtNum(comments)}</td><td class="num">${fmtNum(sv)}</td></tr>`;
+  });
+  h+='</tbody></table>';
+  return h;
+}
 function awarenessPaneHtml(c){
   const camps=(c.awarenessCampaigns||[]);
   if(!camps.length) return '<div class="note">認知施策データがありません。</div>';
@@ -1094,39 +1145,11 @@ function awarenessPaneHtml(c){
   const bestType=Object.entries(typeEff).sort((a,b)=>(b[1].sum/b[1].cnt)-(a[1].sum/a[1].cnt))[0];
   const bestTypeName=bestType?bestType[0]:'—';
 
-  // KPI行
-  let h='<div class="rpp-grid" style="margin-bottom:18px">';
-  h+=`<div class="rpp-stat"><div class="l">総施策数</div><div class="v">${totalCamps}<small style="font-size:13px">件</small></div></div>`;
-  h+=`<div class="rpp-stat"><div class="l">総インプ増加（推定）</div><div class="v">${fmtNum(totalImpLift)}<small style="font-size:12px"> imp</small></div></div>`;
-  h+=`<div class="rpp-stat"><div class="l">平均指名検索リフト率</div><div class="v">${avgLiftRate.toFixed(1)}<small style="font-size:13px">%</small></div></div>`;
-  h+=`<div class="rpp-stat"><div class="l">最も効率的な施策タイプ</div><div class="v" style="font-size:16px">${esc(bestTypeName)}</div></div>`;
-  h+='</div>';
+  let h=`<div class="rpp-grid" id="aw-kpi-row" style="margin-bottom:18px">${_awarenessKpiInner(camps)}</div>`;
 
-  // 施策別評価テーブル
-  // 効率順にソート
-  const sorted=[...camps].sort((a,b)=>{
-    const ea=a.postImpressions>0?(a.estImpLift/a.postImpressions):0;
-    const eb=b.postImpressions>0?(b.estImpLift/b.postImpressions):0;
-    return eb-ea;
-  });
-  h+='<div class="card" style="margin-bottom:18px"><div class="card-h"><h3>施策別 評価一覧</h3><span class="hint">効率順（estImpLift ÷ 投稿インプ）</span></div><div class="card-b" style="overflow-x:auto">';
-  h+='<table class="tbl"><thead><tr><th>施策名</th><th>種類</th><th>媒体</th><th>期間</th><th class="num">投稿インプ</th><th class="num">いいね</th><th class="num">保存</th><th class="num">指名検索リフト率</th><th class="num">インプ増加(推定)</th><th class="num">効率</th></tr></thead><tbody>';
-  sorted.forEach(cm=>{
-    const liftRate=cm.gscImpBefore>0?((cm.gscImpAfter-cm.gscImpBefore)/cm.gscImpBefore*100):0;
-    const eff=cm.postImpressions>0?(cm.estImpLift/cm.postImpressions):0;
-    const liftCls=liftRate>=10?'b-green':liftRate>=0?'b-blue':'b-red';
-    h+=`<tr><td>${esc(cm.name)}</td><td><span class="badge b-gray">${esc(cm.type)}</span></td><td>${esc(cm.platform)}</td>`;
-    h+=`<td style="white-space:nowrap">${esc(cm.start)}〜${esc(cm.end)}</td>`;
-    h+=`<td class="num">${fmtNum(cm.postImpressions)}</td>`;
-    h+=`<td class="num">${fmtNum(cm.likes)}</td>`;
-    h+=`<td class="num">${fmtNum(cm.saves)}</td>`;
-    h+=`<td class="num"><span class="badge ${liftCls}">${liftRate>=0?'+':''}${liftRate.toFixed(1)}%</span></td>`;
-    h+=`<td class="num">${fmtNum(cm.estImpLift)}</td>`;
-    h+=`<td class="num">${eff.toFixed(2)}</td></tr>`;
-  });
-  h+='</tbody></table>';
-  h+='<div class="note" style="margin-top:8px">効率 = estImpLift ÷ 投稿インプ（高いほど波及効率が良い）。指名検索リフト率 = (施策後日次平均 − 施策前日次平均) ÷ 施策前日次平均 × 100。デモデータ。</div>';
-  h+='</div></div>';
+  h+='<div class="card" style="margin-bottom:18px"><div class="card-h"><h3>施策別 評価一覧</h3><span class="hint">効率順（estImpLift ÷ 投稿インプ）</span></div><div class="card-b" style="overflow-x:auto"><div id="aw-camp-inner">';
+  h+=_awarenessCampTableInner(camps);
+  h+='</div></div></div>';
 
   // チャート用 canvas 3本
   h+='<div class="grid c2e">';
@@ -1183,6 +1206,8 @@ function awarenessCharts(c){
     {label:'施策後 日次平均（imp/日）',data:camps.map(cm=>cm.gscImpAfter),backgroundColor:'rgba(26,58,92,0.8)'}
   ]},options:{maintainAspectRatio:false,plugins:{legend:{position:'bottom',labels:{boxWidth:12,font:{size:11}}}},
     scales:{x:{ticks:{...TICK,font:{size:10}},grid:{display:false}},y:{ticks:{...TICK,callback:v=>fmtNum(v)},grid:GRID,beginAtZero:true}}}});
+  const awkpi=document.getElementById('aw-kpi-row'); if(awkpi) awkpi.innerHTML=_awarenessKpiInner(camps);
+  const awcamp=document.getElementById('aw-camp-inner'); if(awcamp) awcamp.innerHTML=_awarenessCampTableInner(camps);
 }
 
 function renderTabCharts(key,series,mo,products,c,newC,repC,subC){
@@ -1206,16 +1231,7 @@ function renderTabCharts(key,series,mo,products,c,newC,repC,subC){
 function brandedPaneHtml(c){
   const bs=c.brandedSearch;
   if(!bs) return '<div class="note">指名検索データがありません（brandedSearch）。</div>';
-  const latest=bs.monthly[bs.monthly.length-1]||{};
-  const brImp=latest.brandedImp||0;
-  const nbImp=latest.nonbrandedImp||0;
-  const brRatio=(brImp+nbImp)>0?(brImp/(brImp+nbImp)*100).toFixed(1):'0.0';
-  let h='<div class="rpp-grid" style="margin-bottom:18px">';
-  h+=`<div class="rpp-stat"><div class="l">指名表示回数（直近月）</div><div class="v">${fmtNum(brImp)}<small style="font-size:12px"> imp</small></div></div>`;
-  h+=`<div class="rpp-stat"><div class="l">指名クリック数（直近月）</div><div class="v">${fmtNum(latest.brandedClicks||0)}</div></div>`;
-  h+=`<div class="rpp-stat"><div class="l">指名比率（imp）</div><div class="v">${brRatio}<small style="font-size:13px">%</small></div></div>`;
-  h+=`<div class="rpp-stat"><div class="l">指名掲載順位（直近月）</div><div class="v">${latest.brandedPosition||'—'}<small style="font-size:13px">位</small></div></div>`;
-  h+='</div>';
+  let h=`<div class="rpp-grid" id="br-kpi-row" style="margin-bottom:18px">${_brandedKpiInner(bs.monthly)}</div>`;
   h+='<div class="grid c2e">';
   h+='<div class="card"><div class="card-h"><h3>月次 指名 vs 非指名 表示回数</h3></div><div class="card-b"><div class="chart-box"><canvas id="p-br-trend"></canvas></div></div></div>';
   h+='<div class="card"><div class="card-h"><h3>指名掲載順位（月次）</h3><span class="hint">上ほど上位</span></div><div class="card-b"><div class="chart-box"><canvas id="p-br-pos"></canvas></div></div></div>';
@@ -1249,6 +1265,7 @@ function brandedCharts(c){
   ]},options:{maintainAspectRatio:false,plugins:{legend:{display:false}},
     scales:{x:{ticks:{...TICK,maxTicksLimit:12},grid:{display:false}},
       y:{reverse:true,ticks:{...TICK,stepSize:0.5},grid:GRID,suggestedMin:1,suggestedMax:3}}}});
+  const brkpi=document.getElementById('br-kpi-row'); if(brkpi) brkpi.innerHTML=_brandedKpiInner(monthly);
 }
 
 /* ============ SNS日次タブ ============ */
@@ -1265,16 +1282,9 @@ function snsPaneHtml(c){
   h+='<div class="card"><div class="card-h"><h3>日次リーチ / 再生数（直近30日）</h3></div><div class="card-b"><div class="chart-box"><canvas id="p-sns-reach"></canvas></div></div></div>';
   h+='<div class="card"><div class="card-h"><h3>エンゲージメント合計（直近30日）</h3><span class="hint">プラットフォーム別</span></div><div class="card-b"><div class="chart-box"><canvas id="p-sns-eng"></canvas></div></div></div>';
   h+='</div>';
-  h+='<div class="card" style="margin-bottom:18px"><div class="card-h"><h3>プラットフォーム別 エンゲージメント詳細</h3></div><div class="card-b" style="overflow-x:auto">';
-  h+='<table class="tbl"><thead><tr><th>プラットフォーム</th><th class="num">合計リーチ/再生</th><th class="num">いいね</th><th class="num">コメント</th><th class="num">シェア/保存</th></tr></thead><tbody>';
-  sd.platforms.forEach(p=>{
-    const reach=p.daily.reduce((s,d)=>s+(d.reach||d.views||0),0);
-    const likes=p.daily.reduce((s,d)=>s+(d.likes||0),0);
-    const comments=p.daily.reduce((s,d)=>s+(d.comments||0),0);
-    const sv=p.daily.reduce((s,d)=>s+(d.saves||d.shares||0),0);
-    h+=`<tr><td><span style="display:inline-block;width:10px;height:10px;background:${esc(p.color)};border-radius:50%;margin-right:6px;vertical-align:middle"></span>${esc(p.platform)}</td><td class="num">${fmtNum(reach)}</td><td class="num">${fmtNum(likes)}</td><td class="num">${fmtNum(comments)}</td><td class="num">${fmtNum(sv)}</td></tr>`;
-  });
-  h+='</tbody></table></div></div>';
+  h+='<div class="card" style="margin-bottom:18px"><div class="card-h"><h3>プラットフォーム別 エンゲージメント詳細（選択期間）</h3></div><div class="card-b" style="overflow-x:auto"><div id="sns-detail-inner">';
+  h+=_snsPlatTableInner(sd.platforms);
+  h+='</div></div></div>';
   h+=`<div class="note">${esc(sd.note)}</div>`;
   return h;
 }
@@ -1312,6 +1322,7 @@ function snsCharts(c){
     {label:'シェア/保存',data:engSv,backgroundColor:'rgba(26,115,232,0.75)',stack:'s'}
   ]},options:{maintainAspectRatio:false,plugins:{legend:{position:'bottom',labels:{boxWidth:12,font:{size:11}}}},
     scales:{x:{stacked:true,ticks:TICK,grid:{display:false}},y:{stacked:true,ticks:{...TICK,callback:v=>fmtNum(v)},grid:GRID,beginAtZero:true}}}});
+  const snstbl=document.getElementById('sns-detail-inner'); if(snstbl) snstbl.innerHTML=_snsPlatTableInner(filteredPlats);
 }
 
 /* ============ チャネル回遊タブ ============ */
