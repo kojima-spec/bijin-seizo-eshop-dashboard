@@ -689,7 +689,7 @@ function renderChan(key){
     }).join('')}
   </div>
 
-  <div id="gran-bar" style="margin:2px 0 14px;display:${(curTab==='crm'||curTab==='customer'||curTab==='awareness'||curTab==='branded'||curTab==='sns'||curTab==='journey')?'none':'flex'};gap:8px;align-items:center;font-size:12px;flex-wrap:wrap">
+  <div id="gran-bar" style="margin:2px 0 14px;display:${(curTab==='crm'||curTab==='customer')?'none':'flex'};gap:8px;align-items:center;font-size:12px;flex-wrap:wrap">
     <span style="color:var(--c-text-secondary)">粒度:</span>
     <span class="chan-pill active" id="gran-month" onclick="setGran('month')">月次</span>
     ${(DAILY[key]&&DAILY[key].length)?`<span class="chan-pill" id="gran-day" onclick="setGran('day')">日次</span>`:`<span class="chan-pill" id="gran-day" style="opacity:.4;cursor:not-allowed" title="日次データは未提供（デモ）">日次🚫</span>`}
@@ -708,11 +708,15 @@ function renderChan(key){
     <div class="grid c2e">
       <div class="card"><div class="card-h" style="flex-wrap:wrap;gap:8px"><h3>月次トレンド</h3>
         <div id="metric-pick" style="display:flex;gap:12px;flex-wrap:wrap;font-size:12px;color:var(--c-text-secondary)">
-          ${(()=>{const subAvail=series.some(d=>(d.salesSub||0)>0);
+          ${(()=>{
+            const subAvail=series.some(d=>(d.salesSub||0)>0);
+            const regAvail=series.some(d=>(d.salesReg||0)>0);
+            const newAvail=series.some(d=>(d.salesNew||0)>0);
+            const repAvail=series.some(d=>(d.salesRepeat||0)>0);
+            const adAvail=series.some(d=>(d.adCost||0)>0);
             return [['sales','売上'],['salesReg','通常売上'],['salesSub','定期売上'],['salesNew','新規売上(通常)'],['salesRepeat','既存売上(通常)'],['orders','購入件数'],['sessions','アクセス数'],['cvr','CVR'],['aov','客単価'],['adCost','広告費']].map(([k,l])=>{
-              const dis=(k==='salesSub'&&!subAvail);
-              return dis ? `<label style="opacity:.35;cursor:not-allowed" title="このチャネルでは定期購入データを取得できません（${c.name}）"><input type="checkbox" disabled style="vertical-align:middle"> ${l}🚫</label>`
-                         : `<label style="cursor:pointer;user-select:none"><input type="checkbox" value="${k}" ${k==='sales'?'checked':''} onchange="redrawMetric()" style="vertical-align:middle"> ${l}</label>`;}).join('');})()}
+              const dis=(k==='salesSub'&&!subAvail)||(k==='salesReg'&&!regAvail)||(k==='salesNew'&&!newAvail)||(k==='salesRepeat'&&!repAvail)||(k==='adCost'&&!adAvail);
+              return dis ? '' : `<label style="cursor:pointer;user-select:none"><input type="checkbox" value="${k}" ${k==='sales'?'checked':''} onchange="redrawMetric()" style="vertical-align:middle"> ${l}</label>`;}).join('');})()}
         </div></div>
         <div class="card-b"><div class="chart-box sm"><canvas id="p-metric"></canvas></div></div></div>
       <div class="card"><div class="card-h"><h3>新規 / リピート / 定期 注文数</h3></div><div class="card-b"><div class="chart-box sm"><canvas id="p-nr3"></canvas></div></div></div>
@@ -916,6 +920,10 @@ function redrawActiveTab(){
   else if(curTab==='product')redrawProduct();
   else if(curTab==='ads')redrawAds();
   else if(curTab==='promo')redrawPromo();
+  else if(curTab==='awareness')awarenessCharts(window.__C);
+  else if(curTab==='branded')brandedCharts(window.__C);
+  else if(curTab==='sns')snsCharts(window.__C);
+  else if(curTab==='journey')journeyCharts(window.__C);
 }
 // 全期間合計に対する選択期間の比率（指標別）。商品/広告/販促の期間スケールに使う
 function rangeFactor(){
@@ -1131,7 +1139,12 @@ function awarenessPaneHtml(c){
 }
 
 function awarenessCharts(c){
-  const camps=(c.awarenessCampaigns||[]);
+  let camps=(c.awarenessCampaigns||[]);
+  if(!camps.length) return;
+  // 期間フィルタ：施策開始日が選択期間内のものだけ表示
+  const f=window.__MFROM||(window.__GRAN==='day'&&window.__DFROM?window.__DFROM.slice(0,7):null);
+  const t=window.__MTO||(window.__GRAN==='day'&&window.__DTO?window.__DTO.slice(0,7):null);
+  if(f||t) camps=camps.filter(cm=>{const ym=cm.start.slice(0,7);return (!f||ym>=f)&&(!t||ym<=t);});
   if(!camps.length) return;
 
   // 効率順ソート
@@ -1221,14 +1234,18 @@ function brandedPaneHtml(c){
 function brandedCharts(c){
   const bs=c.brandedSearch;
   if(!bs||!document.getElementById('p-br-trend')) return;
-  const labels=bs.monthly.map(m=>m.month);
+  // 月次フィルタ適用（日次モードでも月次データを使用）
+  const from=window.__MFROM||(window.__GRAN==='day'&&window.__DFROM?window.__DFROM.slice(0,7):null);
+  const to=window.__MTO||(window.__GRAN==='day'&&window.__DTO?window.__DTO.slice(0,7):null);
+  const monthly=(from||to)?bs.monthly.filter(m=>{const ym=labelToYM(m.month);return (!from||ym>=from)&&(!to||ym<=to);}):bs.monthly;
+  const labels=monthly.map(m=>m.month);
   mkChart('p-br-trend',{type:'bar',data:{labels,datasets:[
-    {label:'指名 imp',data:bs.monthly.map(m=>m.brandedImp),backgroundColor:'rgba(26,58,92,0.8)',stack:'s'},
-    {label:'非指名 imp',data:bs.monthly.map(m=>m.nonbrandedImp),backgroundColor:'rgba(159,168,218,0.6)',stack:'s'}
+    {label:'指名 imp',data:monthly.map(m=>m.brandedImp),backgroundColor:'rgba(26,58,92,0.8)',stack:'s'},
+    {label:'非指名 imp',data:monthly.map(m=>m.nonbrandedImp),backgroundColor:'rgba(159,168,218,0.6)',stack:'s'}
   ]},options:{maintainAspectRatio:false,plugins:{legend:{position:'bottom',labels:{boxWidth:12,font:{size:11}}}},
     scales:{x:{stacked:true,ticks:{...TICK,maxTicksLimit:12},grid:{display:false}},y:{stacked:true,ticks:{...TICK,callback:v=>fmtNum(v)},grid:GRID}}}});
   mkChart('p-br-pos',{type:'line',data:{labels,datasets:[
-    {label:'指名掲載順位',data:bs.monthly.map(m=>m.brandedPosition),borderColor:'#1a3a5c',backgroundColor:'rgba(26,58,92,0.1)',fill:true,tension:0.3,pointRadius:2}
+    {label:'指名掲載順位',data:monthly.map(m=>m.brandedPosition),borderColor:'#1a3a5c',backgroundColor:'rgba(26,58,92,0.1)',fill:true,tension:0.3,pointRadius:2}
   ]},options:{maintainAspectRatio:false,plugins:{legend:{display:false}},
     scales:{x:{ticks:{...TICK,maxTicksLimit:12},grid:{display:false}},
       y:{reverse:true,ticks:{...TICK,stepSize:0.5},grid:GRID,suggestedMin:1,suggestedMax:3}}}});
@@ -1264,18 +1281,31 @@ function snsPaneHtml(c){
 function snsCharts(c){
   const sd=c.snsDaily;
   if(!sd||!document.getElementById('p-sns-reach')) return;
-  const dates=sd.platforms[0].daily.map(d=>d.date.slice(5));
+  // 期間フィルタ：日次モードはISO日付範囲、月次モードは年月プレフィックスで絞り込み
+  const filteredPlats=sd.platforms.map(p=>{
+    let days=[...p.daily];
+    if(window.__GRAN==='day'){
+      const f=window.__DFROM, t=window.__DTO;
+      if(f||t) days=days.filter(d=>(!f||d.date>=f)&&(!t||d.date<=t));
+    } else {
+      const f=window.__MFROM, t=window.__MTO;
+      if(f||t) days=days.filter(d=>{const ym=d.date.slice(0,7);return (!f||ym>=f)&&(!t||ym<=t);});
+    }
+    return {...p,daily:days};
+  });
+  const refDays=filteredPlats[0]?.daily||[];
+  const dates=refDays.map(d=>d.date.slice(5));
   const colors=sd.platforms.map(p=>p.color);
-  mkChart('p-sns-reach',{type:'line',data:{labels:dates,datasets:sd.platforms.map((p,i)=>({
+  mkChart('p-sns-reach',{type:'line',data:{labels:dates,datasets:filteredPlats.map((p,i)=>({
     label:p.platform,
     data:p.daily.map(d=>d.reach||d.views||0),
     borderColor:colors[i],backgroundColor:colors[i]+'22',fill:false,tension:0.3,pointRadius:0,borderWidth:2
   }))},options:{maintainAspectRatio:false,plugins:{legend:{position:'bottom',labels:{boxWidth:12,font:{size:11}}}},
     scales:{x:{ticks:{...TICK,maxTicksLimit:15},grid:{display:false}},y:{ticks:{...TICK,callback:v=>fmtNum(v)},grid:GRID,beginAtZero:true}}}});
-  const engLabels=sd.platforms.map(p=>p.platform);
-  const engLikes=sd.platforms.map(p=>p.daily.reduce((s,d)=>s+(d.likes||0),0));
-  const engComments=sd.platforms.map(p=>p.daily.reduce((s,d)=>s+(d.comments||0),0));
-  const engSv=sd.platforms.map(p=>p.daily.reduce((s,d)=>s+(d.saves||d.shares||0),0));
+  const engLabels=filteredPlats.map(p=>p.platform);
+  const engLikes=filteredPlats.map(p=>p.daily.reduce((s,d)=>s+(d.likes||0),0));
+  const engComments=filteredPlats.map(p=>p.daily.reduce((s,d)=>s+(d.comments||0),0));
+  const engSv=filteredPlats.map(p=>p.daily.reduce((s,d)=>s+(d.saves||d.shares||0),0));
   mkChart('p-sns-eng',{type:'bar',data:{labels:engLabels,datasets:[
     {label:'いいね',data:engLikes,backgroundColor:'rgba(225,48,108,0.75)',stack:'s'},
     {label:'コメント',data:engComments,backgroundColor:'rgba(255,193,7,0.75)',stack:'s'},
@@ -1327,7 +1357,11 @@ function journeyCharts(c){
     {label:'線形',data:(attr.linear||[]).map(a=>a.revenue),backgroundColor:ATTR_COLORS[2]}
   ]},options:{maintainAspectRatio:false,plugins:{legend:{position:'bottom',labels:{boxWidth:12,font:{size:11}}}},
     scales:{x:{ticks:{...TICK,font:{size:10}},grid:{display:false}},y:yYen}}});
-  const corr=cc.correlation||[];
+  // 相関チャート：月次フィルタ適用
+  const jfrom=window.__MFROM||(window.__GRAN==='day'&&window.__DFROM?window.__DFROM.slice(0,7):null);
+  const jto=window.__MTO||(window.__GRAN==='day'&&window.__DTO?window.__DTO.slice(0,7):null);
+  const corrAll=cc.correlation||[];
+  const corr=(jfrom||jto)?corrAll.filter(m=>{const ym=labelToYM(m.month);return (!jfrom||ym>=jfrom)&&(!jto||ym<=jto);}):corrAll;
   const corrLabels=corr.map(m=>m.month);
   mkChart('p-jrn-corr',{type:'line',data:{labels:corrLabels,datasets:[
     {label:'SNSリーチ',data:corr.map(m=>m.snsReach),borderColor:'#E1306C',backgroundColor:'transparent',tension:0.3,pointRadius:0,borderWidth:2,yAxisID:'y_sns'},
@@ -1767,7 +1801,7 @@ function switchTab(k){
   event.target.classList.add('active');
   document.getElementById('pane-'+k).classList.add('active');
   const gb=document.getElementById('gran-bar');               // CRM/顧客分析は期間非連動→粒度バー非表示
-  if(gb) gb.style.display=(k==='crm'||k==='customer'||k==='awareness'||k==='branded'||k==='sns'||k==='journey')?'none':'flex';
+  if(gb) gb.style.display=(k==='crm'||k==='customer')?'none':'flex';
   defer(()=>{redrawActiveTab();resizeAll();});                // タブ表示時に期間連動で再描画
 }
 
