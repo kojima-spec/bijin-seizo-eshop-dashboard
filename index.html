@@ -201,8 +201,17 @@ function tacticsFormHtml(){
       <button onclick="resetTactics()" style="font-family:inherit;font-size:12px;padding:7px 16px;border:1px solid var(--c-border);border-radius:6px;background:#fff;cursor:pointer">既定に戻す</button>
     </div></div></div>`;
 }
-function saveTactics(){try{TAC_TABS.forEach(([k])=>{const el=document.getElementById('tac-'+k);if(el)localStorage.setItem(tacKey(k),el.value);});}catch(e){}renderChan(curChan);}
-function resetTactics(){try{TAC_TABS.forEach(([k])=>localStorage.removeItem(tacKey(k)));}catch(e){}renderChan(curChan);}
+function _rerenderKeepPeriod(){
+  const g=window.__GRAN,mf=window.__MFROM,mt=window.__MTO,df=window.__DFROM,dt=window.__DTO;
+  renderChan(curChan);
+  // renderChan が __GRAN='month' にリセットするため期間状態を復元する
+  if(g==='day'){const f=document.getElementById('d-from'),t=document.getElementById('d-to');if(f&&df)f.value=df;if(t&&dt)t.value=dt;}
+  else{const f=document.getElementById('m-from'),t=document.getElementById('m-to');if(f&&mf)f.value=mf;if(t&&mt)t.value=mt;}
+  window.__MFROM=mf;window.__MTO=mt;window.__DFROM=df;window.__DTO=dt;
+  setGran(g);
+}
+function saveTactics(){try{TAC_TABS.forEach(([k])=>{const el=document.getElementById('tac-'+k);if(el)localStorage.setItem(tacKey(k),el.value);});}catch(e){}_rerenderKeepPeriod();}
+function resetTactics(){try{TAC_TABS.forEach(([k])=>localStorage.removeItem(tacKey(k)));}catch(e){}_rerenderKeepPeriod();}
 
 /* ===== ルールベース評価 共通HTML生成 ===== */
 function _evalCard(status,fact,actions,note){
@@ -501,7 +510,7 @@ function salesFbHtml(){
     <div style="font-size:11px;color:var(--c-text-muted);margin-top:8px">※現状評価は選択期間の実データから自動算出。推奨アクションは定量評価と打ち手メモに基づく実行案です（ルールベース）。「前期比」は対象期間を前半／後半に二分した比較で、季節性（前年同月比）は含みません。</div>
   </div></div>`;
 }
-function saveSalesArea(){try{localStorage.setItem(salesAreaKey(),document.getElementById('sales-area').value);}catch(e){}renderChan(curChan);}
+function saveSalesArea(){try{localStorage.setItem(salesAreaKey(),document.getElementById('sales-area').value);}catch(e){}_rerenderKeepPeriod();}
 function saveSalesMemo(){try{localStorage.setItem(salesMemoKey(),document.getElementById('sales-memo').value);}catch(e){}}
 /* 獲得月別コホート（LTV・F2転換率）— 獲得チャネル/月の質を評価する材料 */
 function cohortHtml(c){
@@ -571,7 +580,8 @@ function renderAll(){
   const totalSales=sum(cons,d=>d.sales);
   const totalAd=sum(cons,d=>d.adCost);
   const totalOrders=sum(cons,d=>d.orders);
-  const roas=(totalSales/totalAd);
+  const totalCvSales=sum(cons,d=>d.cvSales||0);
+  const roas=totalAd>0?totalCvSales/totalAd:0;
   const aov=totalOrders>0?totalSales/totalOrders:null;
   // チャネル別年間売上
   const chanTotals=keys.map(k=>({key:k,...CHANNELS[k],sales:sum(monthlySeries(k),d=>d.sales),ad:sum(monthlySeries(k),d=>d.adCost),orders:sum(monthlySeries(k),d=>d.orders)}));
@@ -587,7 +597,7 @@ function renderAll(){
   <div class="kpi-row">
     <div class="kpi"><div class="label">EC全売上（連結）</div><div class="value">¥${fmtYen(totalSales)}</div><div class="delta ${gy.cls}">${gy.arrow} ${gy.text}</div></div>
     <div class="kpi"><div class="label">広告費合計</div><div class="value">¥${fmtYen(totalAd)}</div><div class="delta">広告費比率 ${(totalAd/totalSales*100).toFixed(1)}%</div></div>
-    <div class="kpi"><div class="label">全体ROAS</div><div class="value">${isFinite(roas)&&roas>0?roas.toFixed(2):'—'}<small>倍</small></div><div class="delta">広告経由/総売上ベース</div></div>
+    <div class="kpi"><div class="label">全体ROAS</div><div class="value">${isFinite(roas)&&roas>0?roas.toFixed(2):'—'}<small>倍</small></div><div class="delta">広告経由売上÷広告費（全売上ではない）</div></div>
     <div class="kpi"><div class="label">注文数</div><div class="value">${fmtNum(totalOrders)}<small>件</small></div><div class="delta">月平均 ${fmtNum(totalOrders/(nMonths||1))}件</div></div>
     <div class="kpi"><div class="label">平均客単価</div><div class="value">${aov!=null?'¥'+fmtNum(aov):'—'}</div><div class="delta">チャネル加重平均</div></div>
     <div class="kpi"><div class="label">稼働チャネル</div><div class="value">${keys.length}<small>ch</small></div><div class="delta">${keys.map(k=>CHANNELS[k].name).join('/')}</div></div>
@@ -704,7 +714,7 @@ function renderChan(key){
   </div>
 
   <div class="pane ${curTab==='sales'?'active':''}" id="pane-sales">
-    ${salesFbHtml()}
+    <div id="sales-fb-wrap">${salesFbHtml()}</div>
     <div class="grid c2e">
       <div class="card"><div class="card-h" style="flex-wrap:wrap;gap:8px"><h3>月次トレンド</h3>
         <div id="metric-pick" style="display:flex;gap:12px;flex-wrap:wrap;font-size:12px;color:var(--c-text-secondary)">
@@ -916,7 +926,7 @@ function applyMonthRange(){
 // 現在のタブに応じて、粒度/期間に連動した再描画（CRM・顧客分析は期間非連動）
 function redrawActiveTab(){
   const kr=document.getElementById('kpi-row'); if(kr&&window.__C) kr.innerHTML=chanKpiHtml(window.__C);  // 上部KPIを選択期間で再計算
-  if(curTab==='sales'){redrawMetric();redrawNr3();}
+  if(curTab==='sales'){const sfbEl=document.getElementById('sales-fb-wrap');if(sfbEl)sfbEl.innerHTML=salesFbHtml();redrawMetric();redrawNr3();}
   else if(curTab==='product')redrawProduct();
   else if(curTab==='ads')redrawAds();
   else if(curTab==='promo')redrawPromo();
@@ -947,6 +957,8 @@ function redrawProduct(){
   let t='<table class="tbl"><thead><tr><th>商品</th><th class="num">合計売上</th><th class="num">販売数</th><th class="num">CVR</th><th class="num">粗利率</th><th class="num">粗利額</th><th class="num">在庫</th></tr></thead><tbody>';
   t+=rows.map((p,i)=>`<tr style="cursor:pointer" onclick="showProduct(${i})"><td>▸ ${p.n}</td><td class="num">¥${fmtYen(p.sales)}</td><td class="num">${fmtNum(p.units)}</td><td class="num">${p.cvr}%</td><td class="num">${p.gm!=null?Math.round(p.gm*100)+'%':'—'}</td><td class="num">${p.gm!=null?'¥'+fmtYen(Math.round(p.sales*p.gm)):'—'}</td><td class="num">${p.stock!=null?(p.stock===0?'<span style="color:#cf222e">⚠️欠品</span>':fmtNum(p.stock)):'—'}</td></tr>`).join('');
   t+=`<tr style="font-weight:700;background:#f8f9fb"><td>合計</td><td class="num">¥${fmtYen(salesTot)}</td><td class="num">${fmtNum(unitsTot)}</td><td class="num">${sessTot>0?(unitsTot/sessTot*100).toFixed(2):'0.00'}%</td><td class="num">${salesTot>0?Math.round(gpTot/salesTot*100)+'%':'—'}</td><td class="num">¥${fmtYen(Math.round(gpTot))}</td><td class="num">${fmtNum(stTot)}</td></tr></tbody></table>`;
+  const periodFiltered=window.__MFROM||window.__MTO||window.__DFROM||window.__DTO;
+  if(periodFiltered) t+='<div class="note" style="margin-top:6px;color:#9a6700">📌 期間フィルタ適用中：商品別数値は全期間実績を選択期間の売上比率で按分した推定値です。</div>';
   document.getElementById('prod-table').innerHTML=t;
   mkChart('p-prod',{type:'bar',data:{labels:rows.map(p=>p.n),datasets:[
     {label:'通常購入',data:rows.map(p=>p.salesReg),backgroundColor:c.color},
@@ -989,6 +1001,8 @@ function redrawAds(){
   let t='<table class="tbl"><thead><tr><th>媒体</th><th class="num">広告費</th><th class="num">imp</th><th class="num">CTR</th><th class="num">CPC</th><th class="num">広告経由売上</th><th class="num">件数</th><th class="num">CPA</th><th class="num">ROAS</th></tr></thead><tbody>';
   t+=ap.map((a,i)=>`<tr style="cursor:pointer" onclick="showAdCampaigns(${i})"><td>▸ ${a.name}</td><td class="num">¥${fmtYen(a.cost)}</td><td class="num">${fmtNum(a.imp)}</td><td class="num">${a.ctr!=null?a.ctr+'%':'—'}</td><td class="num">${a.cpc!=null?'¥'+fmtNum(a.cpc):'—'}</td><td class="num">¥${fmtYen(a.cvSales)}</td><td class="num">${fmtNum(a.orders)}</td><td class="num">${a.cpa!=null?'¥'+fmtNum(a.cpa):'—'}</td><td class="num">${a.roas}倍</td></tr>`).join('');
   t+=`<tr style="font-weight:700;background:#f8f9fb"><td>合計</td><td class="num">¥${fmtYen(totCost)}</td><td class="num">${fmtNum(totImp)}</td><td class="num">${totImp>0?(totClk/totImp*100).toFixed(2):'0.00'}%</td><td class="num">${totClk>0?'¥'+fmtNum(Math.round(totCost/totClk)):'—'}</td><td class="num">¥${fmtYen(totCv)}</td><td class="num">${fmtNum(totO)}</td><td class="num">${totO>0?'¥'+fmtNum(Math.round(totCost/totO)):'—'}</td><td class="num">${roas.toFixed(2)}倍</td></tr></tbody></table>`;
+  const adPeriodFiltered=window.__MFROM||window.__MTO||window.__DFROM||window.__DTO;
+  if(adPeriodFiltered) t+='<div class="note" style="margin-top:6px;color:#9a6700">📌 期間フィルタ適用中：広告費・売上は全期間実績を比率按分した推定値です（媒体別ROAS・CPA等の効率指標は全期間値）。</div>';
   document.getElementById('ads-table').innerHTML=t;
   mkChart('p-ads2',{type:'bar',data:{labels:ap.map(a=>a.name),datasets:[
     {label:'広告費',data:ap.map(a=>a.cost),backgroundColor:'#e8710a'},
@@ -1017,6 +1031,8 @@ function redrawPromo(){
   let t='<table class="tbl"><thead><tr><th>流入チャネル</th><th class="num">売上</th><th class="num">アクセス</th><th class="num">件数</th><th class="num">CVR</th><th class="num">構成比</th></tr></thead><tbody>';
   t+=pr.map((p,i)=>`<tr style="cursor:pointer" onclick="showCampaigns(${i})"><td>▸ ${p.name}</td><td class="num">¥${fmtYen(p.sales)}</td><td class="num">${fmtNum(p.sessions)}</td><td class="num">${fmtNum(p.orders)}</td><td class="num">${cvr(p)}%</td><td class="num">${tot>0?(p.sales/tot*100).toFixed(0):0}%</td></tr>`).join('');
   t+='</tbody></table>';
+  const promoPeriodFiltered=window.__MFROM||window.__MTO||window.__DFROM||window.__DTO;
+  if(promoPeriodFiltered) t+='<div class="note" style="margin-top:6px;color:#9a6700">📌 期間フィルタ適用中：販促別売上は全期間実績を比率按分した推定値です。</div>';
   document.getElementById('promo-table').innerHTML=t;
   mkChart('p-promo',{type:'bar',data:{labels:pr.map(p=>p.name),datasets:[{label:'売上',data:pr.map(p=>p.sales),backgroundColor:c.color}]},
     options:{maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{x:{ticks:{...TICK,font:{size:10}},grid:{display:false}},y:yYen}}});
@@ -1164,10 +1180,10 @@ function awarenessPaneHtml(c){
 function awarenessCharts(c){
   let camps=(c.awarenessCampaigns||[]);
   if(!camps.length) return;
-  // 期間フィルタ：施策開始日が選択期間内のものだけ表示
+  // 期間フィルタ：選択期間に施策期間(start〜end)がオーバーラップするものを表示
   const f=window.__MFROM||(window.__GRAN==='day'&&window.__DFROM?window.__DFROM.slice(0,7):null);
   const t=window.__MTO||(window.__GRAN==='day'&&window.__DTO?window.__DTO.slice(0,7):null);
-  if(f||t) camps=camps.filter(cm=>{const ym=cm.start.slice(0,7);return (!f||ym>=f)&&(!t||ym<=t);});
+  if(f||t) camps=camps.filter(cm=>{const cs=cm.start.slice(0,7),ce=cm.end.slice(0,7);return (!f||ce>=f)&&(!t||cs<=t);});
   if(!camps.length) return;
 
   // 効率順ソート
