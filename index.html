@@ -234,9 +234,12 @@ function productFbHtml(c){
   const top2Share=top2?top2.sales/totalProdSales*100:0;
   const periodMonths=Math.max(1,months().length);
   const lowStock=prods.filter(p=>p.stock!=null&&(p.units||0)>0&&p.stock<(p.units/periodMonths)*1.5);
-  const withSess=prods.filter(p=>(p.sessions||0)>=100).sort((a,b)=>a.cvr-b.cvr);
+  const withSess=prods
+    .filter(p=>(p.sessions||0)>=100)
+    .map(p=>({...p,_cvr:p.cvr!=null?p.cvr:(p.sessions>0?p.units/p.sessions*100:0)}))
+    .sort((a,b)=>a._cvr-b._cvr);
   const lowCvr=withSess[0]; const highCvr=withSess[withSess.length-1];
-  const cvrGap=lowCvr&&highCvr?(lowCvr.cvr>0?highCvr.cvr/lowCvr.cvr:(highCvr.cvr>0?999:1)):1;
+  const cvrGap=lowCvr&&highCvr?(lowCvr._cvr>0?highCvr._cvr/lowCvr._cvr:(highCvr._cvr>0?999:1)):1;
   const hasStockData=prods.some(p=>p.stock!=null);
   let status,fact,actions;
   if(topShare>60){
@@ -250,11 +253,11 @@ function productFbHtml(c){
     actions=[`[在庫] ${s.n}の発注リードタイムを確認し、今週中に追加発注するか定期配信を一時停止するか判断する`,'[設計変更] 主要商品の在庫アラート閾値（在庫÷月次販売数<1.5ヶ月）を設定し毎月確認するフローを作る'];
   } else if(withSess.length>=2&&cvrGap>=2){
     status='warn';
-    if(lowCvr.cvr===0){
+    if(lowCvr._cvr===0){
       fact=`${lowCvr.n}はアクセス${lowCvr.sessions}セッションあるがCVR 0%（購入なし）。LP・カゴ・決済フローに致命的な問題がある可能性がある。`;
       actions=[`[LP改修] ${lowCvr.n}のページを実際に購入フロー通りに確認し、エラーや遷移断絶がないか今週中に検証する`,`[設計変更] ヒートマップを設置し、${lowCvr.n}訪問者がどの段階で離脱しているかを特定する`];
     } else {
-      fact=`${highCvr.n}（CVR ${highCvr.cvr.toFixed(2)}%）に対し${lowCvr.n}（CVR ${lowCvr.cvr.toFixed(2)}%）は${Math.round(cvrGap)}倍の差がある。${lowCvr.n}のLP・商品説明・レビュー数に改善余地がある可能性が高い。`;
+      fact=`${highCvr.n}（CVR ${highCvr._cvr.toFixed(2)}%）に対し${lowCvr.n}（CVR ${lowCvr._cvr.toFixed(2)}%）は${Math.round(cvrGap)}倍の差がある。${lowCvr.n}のLP・商品説明・レビュー数に改善余地がある可能性が高い。`;
       actions=[`[LP改修] ${lowCvr.n}のページヒートマップを計測し、離脱ポイントと成分説明・レビューの充実度を確認する`,`[設計変更] ${lowCvr.n}のトップ画像・価格帯・セット構成を${highCvr.n}と比較し、改善ポイントを今月中に特定する`];
     }
   } else {
@@ -421,21 +424,20 @@ function salesAreaKey(){return 'tac_area_'+(META.client||'demo')+'_sales';}
 function salesMemoKey(){return 'tac_memo_'+(META.client||'demo')+'_sales';}
 /* 選択期間の系列から KPI を算出し、前半/後半比較で離散ラベル化（生値でなくラベルで条件判定） */
 function salesKpiCtx(){
-  const {series}=activeSL(); const n=series.length||1; const half=Math.max(1,Math.floor(n/2));
+  const {series}=activeSL(); const n=series.length; const half=Math.max(1,Math.floor(n/2));
   const S=(a,f)=>a.reduce((s,d)=>s+(f(d)||0),0);
   const rec=series.slice(-half), prv=series.slice(0,Math.max(1,n-half));
   const rs=S(rec,d=>d.sales),ps=S(prv,d=>d.sales),ro=S(rec,d=>d.orders),po=S(prv,d=>d.orders),rse=S(rec,d=>d.sessions),pse=S(prv,d=>d.sessions);
   const tS=S(series,d=>d.sales),tO=S(series,d=>d.orders),tSe=S(series,d=>d.sessions),tSub=S(series,d=>d.salesSub);
-  const pct=(a,b)=>b>0?(a/b-1)*100:a>0?999:0;
   const cvr=tSe>0?tO/tSe*100:0, cvr_r=rse>0?ro/rse*100:0, cvr_p=pse>0?po/pse*100:0;
-  const cvrD=cvr_p>0?(cvr_r/cvr_p-1)*100:0;
-  const aov=tO>0?tS/tO:0, aovD=pct(ro>0?rs/ro:0, po>0?ps/po:0);
+  const cvrD=pctChange(cvr_r,cvr_p);
+  const aov=tO>0?tS/tO:0, aovD=pctChange(ro>0?rs/ro:0, po>0?ps/po:0);
   const lab=(v,t)=>{t=t||5;return v>t?'up':v<-t?'down':'flat';};
   const rSc=S(rec,d=>d.subCust||0), pSc=S(prv,d=>d.subCust||0);
-  const subCustDelta=pct(rSc,pSc);
-  return {months:n, sales_delta:pct(rs,ps), session_delta:pct(rse,pse), orders_delta:pct(ro,po),
+  const subCustDelta=pctChange(rSc,pSc);
+  return {months:n, sales_delta:pctChange(rs,ps), session_delta:pctChange(rse,pse), orders_delta:pctChange(ro,po),
     cvr, cvr_delta:cvrD, aov, aov_delta:aovD, sub_ratio:tS>0?tSub/tS*100:0, subCustDelta,
-    sales_t:lab(pct(rs,ps)), session_t:lab(pct(rse,pse)), orders_t:lab(pct(ro,po)), cvr_t:lab(cvrD), aov_t:lab(aovD)};
+    sales_t:lab(pctChange(rs,ps)), session_t:lab(pctChange(rse,pse)), orders_t:lab(pctChange(ro,po)), cvr_t:lab(cvrD), aov_t:lab(aovD)};
 }
 /* ルール表：when(離散ラベル条件) → status / 事実(fact) / 気づき(insight) / 確認の問い(q)。areaは関連視点 */
 const SALES_RULES=[
@@ -466,6 +468,8 @@ function fillTpl(tpl,ctx){return String(tpl).replace(/\{(\w+)\}/g,(_,k)=>{const 
 function evalSalesFb(){
   const ctx=salesKpiCtx(); let area='';try{area=localStorage.getItem(salesAreaKey())||'';}catch(e){}
   const m=SALES_RULES.filter(r=>r.when(ctx)); if(!m.length)return {ctx,area,main:null,all:[]};
+  const guard=m.find(r=>r.id==='guard_short');
+  if(guard)return {ctx,area,main:guard,all:m};
   const ord={bad:0,warn:1,good:2,info:3};
   m.sort((a,b)=>{const ap=(area&&a.area===area)?0:1,bp=(area&&b.area===area)?0:1;if(ap!==bp)return ap-bp;return (ord[a.status]??9)-(ord[b.status]??9);});
   return {ctx,area,main:m[0],all:m};
@@ -522,6 +526,8 @@ function fmtYen(v){
   return Math.round(v).toLocaleString();
 }
 function fmtNum(v){return Math.round(v).toLocaleString();}
+// 変化率（前期比%）。前期が0で現期が正なら 999 を返してゼロ除算と成長を区別する
+function pctChange(a,b){return b>0?((a/b-1)*100):(a>0?999:0);}
 
 // 期間は全データを既定とし、絞り込みは各タブのカレンダー（月次=月レンジ／日次=日付レンジ）で行う
 function months(){return ALL_MONTHS;}
@@ -566,7 +572,7 @@ function renderAll(){
   const totalAd=sum(cons,d=>d.adCost);
   const totalOrders=sum(cons,d=>d.orders);
   const roas=(totalSales/totalAd);
-  const aov=totalSales/totalOrders;
+  const aov=totalOrders>0?totalSales/totalOrders:null;
   // チャネル別年間売上
   const chanTotals=keys.map(k=>({key:k,...CHANNELS[k],sales:sum(monthlySeries(k),d=>d.sales),ad:sum(monthlySeries(k),d=>d.adCost),orders:sum(monthlySeries(k),d=>d.orders)}));
   const maxSales=Math.max(...chanTotals.map(c=>c.sales));
@@ -583,7 +589,7 @@ function renderAll(){
     <div class="kpi"><div class="label">広告費合計</div><div class="value">¥${fmtYen(totalAd)}</div><div class="delta">広告費比率 ${(totalAd/totalSales*100).toFixed(1)}%</div></div>
     <div class="kpi"><div class="label">全体ROAS</div><div class="value">${isFinite(roas)&&roas>0?roas.toFixed(2):'—'}<small>倍</small></div><div class="delta">広告経由/総売上ベース</div></div>
     <div class="kpi"><div class="label">注文数</div><div class="value">${fmtNum(totalOrders)}<small>件</small></div><div class="delta">月平均 ${fmtNum(totalOrders/(nMonths||1))}件</div></div>
-    <div class="kpi"><div class="label">平均客単価</div><div class="value">¥${fmtNum(aov)}</div><div class="delta">チャネル加重平均</div></div>
+    <div class="kpi"><div class="label">平均客単価</div><div class="value">${aov!=null?'¥'+fmtNum(aov):'—'}</div><div class="delta">チャネル加重平均</div></div>
     <div class="kpi"><div class="label">稼働チャネル</div><div class="value">${keys.length}<small>ch</small></div><div class="delta">${keys.map(k=>CHANNELS[k].name).join('/')}</div></div>
   </div>
 
@@ -632,7 +638,7 @@ function chanKpiHtml(c){
   const {series}=activeSL();
   const totalSales=sum(series,d=>d.sales), totalAd=sum(series,d=>d.adCost), totalOrders=sum(series,d=>d.orders);
   const totalCv=sum(series,d=>d.cvSales||0);
-  const roas=totalCv/totalAd, aov=totalSales/totalOrders;  // ROAS=広告経由売上÷広告費（全売上÷広告費ではない）
+  const roas=totalCv/totalAd, aov=totalOrders>0?totalSales/totalOrders:null;  // ROAS=広告経由売上÷広告費（全売上÷広告費ではない）
   const newC=sum(series,d=>d.newCust), repC=sum(series,d=>d.repeatCust);
   const sessTotal=sum(series,d=>d.sessions||0);
   const cvrPct=sessTotal>0?(totalOrders/sessTotal*100).toFixed(2):'0.00';
@@ -645,7 +651,7 @@ function chanKpiHtml(c){
     <div class="kpi"><div class="label">${c.name} 売上</div><div class="value">¥${fmtYen(totalSales)}</div><div class="delta ${cy.cls}">${cy.arrow} ${cy.text}</div></div>
     <div class="kpi"><div class="label">広告費</div><div class="value">¥${fmtYen(totalAd)}</div><div class="delta">比率 ${totalSales>0?(totalAd/totalSales*100).toFixed(1):'0.0'}%</div></div>
     <div class="kpi"><div class="label">ROAS</div><div class="value">${isFinite(roas)&&roas>0?roas.toFixed(2):'—'}<small>倍</small></div><div class="delta">${isFinite(roas)&&roas>0?'ACOS '+(100/roas).toFixed(1)+'%':'広告費データなし'}</div></div>
-    <div class="kpi"><div class="label">購入件数</div><div class="value">${fmtNum(totalOrders)}<small>件</small></div><div class="delta">客単価 ¥${fmtNum(aov)}</div></div>
+    <div class="kpi"><div class="label">購入件数</div><div class="value">${fmtNum(totalOrders)}<small>件</small></div><div class="delta">客単価 ${aov!=null?'¥'+fmtNum(aov):'—'}</div></div>
     <div class="kpi"><div class="label">アクセス数</div><div class="value">${fmtNum(sessTotal)}</div><div class="delta">${avgLabel} ${fmtNum(sessTotal/n)}</div></div>
     <div class="kpi"><div class="label">CVR</div><div class="value">${cvrPct}<small>%</small></div><div class="delta">購入件数÷アクセス数</div></div>
     <div class="kpi"><div class="label">リピート率</div><div class="value">${repPct}<small>%</small></div><div class="delta">${repNote}</div></div>
@@ -656,7 +662,7 @@ function renderChan(key){
   destroyAll();curChan=key;
   const c=CHANNELS[key];const series=monthlySeries(key);const mo=months();
   const totalSales=sum(series,d=>d.sales);const totalAd=sum(series,d=>d.adCost);const totalOrders=sum(series,d=>d.orders);
-  const roas=totalSales/totalAd;const aov=totalSales/totalOrders;
+  const roas=totalSales/totalAd;const aov=totalOrders>0?totalSales/totalOrders:null;
   const newC=sum(series,d=>d.newCust);const repC=sum(series,d=>d.repeatCust);
   // 商品別（data.json の実データ。無ければ空）
   const products=(c.products||[]).slice().sort((a,b)=>b.sales-a.sales);
@@ -1434,8 +1440,7 @@ function brandedKpiCtx(c){
   const sum=(arr,f)=>arr.reduce((s,x)=>s+(f(x)||0),0);
   const recB=sum(rec,m=>m.brandedImp),prvB=sum(prv,m=>m.brandedImp);
   const recNB=sum(rec,m=>m.nonbrandedImp),prvNB=sum(prv,m=>m.nonbrandedImp);
-  const pct=(a,b)=>b>0?((a/b-1)*100):0;
-  const brandedDelta=pct(recB,prvB); const nonbrandedDelta=pct(recNB,prvNB);
+  const brandedDelta=pctChange(recB,prvB); const nonbrandedDelta=pctChange(recNB,prvNB);
   const recT=recB+recNB; const prvT=prvB+prvNB;
   const ratioNow=recT>0?recB/recT*100:0; const ratioPrv=prvT>0?prvB/prvT*100:0;
   const ratioDelta=ratioNow-ratioPrv;
