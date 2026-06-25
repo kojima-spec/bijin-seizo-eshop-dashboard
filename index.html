@@ -204,6 +204,200 @@ function tacticsFormHtml(){
 function saveTactics(){try{TAC_TABS.forEach(([k])=>{const el=document.getElementById('tac-'+k);if(el)localStorage.setItem(tacKey(k),el.value);});}catch(e){}renderChan(curChan);}
 function resetTactics(){try{TAC_TABS.forEach(([k])=>localStorage.removeItem(tacKey(k)));}catch(e){}renderChan(curChan);}
 
+/* ===== ルールベース評価 共通HTML生成 ===== */
+function _evalCard(status,fact,actions,note){
+  const ST={good:['🟢','良好','#1a7f37','rgba(26,127,55,.10)'],warn:['🟡','注意','#9a6700','rgba(154,103,0,.10)'],bad:['🔴','課題','#cf222e','rgba(207,34,46,.10)']};
+  const st=ST[status]||ST.warn;
+  return `<div class="card" style="margin-bottom:14px;border-left:4px solid ${st[2]}"><div class="card-b">
+    <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:10px">
+      <span style="font-weight:700;font-size:13px">📊 現状評価（自動）</span>
+      <span style="font-size:11px;padding:2px 8px;border-radius:10px;background:${st[3]};color:${st[2]}">${st[0]} ${st[1]}</span>
+      <span style="font-size:11px;color:var(--c-text-muted)">ルールベース・実データから自動算出</span>
+    </div>
+    <div style="font-size:12.5px;line-height:1.6;margin-bottom:14px">${esc(fact)}</div>
+    <div style="font-weight:700;font-size:13px;margin-bottom:6px">✅ ネクストアクション</div>
+    <ul style="margin:0;padding-left:18px;font-size:12.5px;line-height:1.75">${actions.map(a=>'<li>'+esc(a)+'</li>').join('')}</ul>
+    ${note?`<div style="font-size:11px;color:var(--c-text-muted);margin-top:10px">${esc(note)}</div>`:''}
+  </div></div>`;
+}
+
+/* ===== 商品別分析 ルールベース自動FB ===== */
+function productFbHtml(c){
+  const prods=(c.products||[]).slice().sort((a,b)=>b.sales-a.sales);
+  if(!prods.length)return '';
+  const totalProdSales=prods.reduce((s,p)=>s+(p.sales||0),0);
+  const totalUnits=prods.reduce((s,p)=>s+(p.units||0),0);
+  if(!totalProdSales)return '';
+  const aov=totalUnits>0?Math.round(totalProdSales/totalUnits):0;
+  const top=prods[0]; const top2=prods[1];
+  const topShare=top.sales/totalProdSales*100;
+  const top2Share=top2?top2.sales/totalProdSales*100:0;
+  const lowStock=prods.filter(p=>p.stock!=null&&(p.units||0)>0&&p.stock<p.units*0.5);
+  const withSess=prods.filter(p=>(p.sessions||0)>=100).sort((a,b)=>a.cvr-b.cvr);
+  const lowCvr=withSess[0]; const highCvr=withSess[withSess.length-1];
+  const cvrGap=lowCvr&&highCvr&&lowCvr.cvr>0?highCvr.cvr/lowCvr.cvr:1;
+  let status,fact,actions;
+  if(topShare>60){
+    status='bad';
+    fact=`${top.n}が売上の${topShare.toFixed(0)}%を占める（2位: ${top2?top2.n+' '+top2Share.toFixed(0)+'%':'—'}）。主力1品への集中度が高く、欠品・価格改定・競合製品投入で一気に売上が落ちるリスクがある。`;
+    actions=[`[商品設計] 今月中に${top2?top2.n:'2位商品'}の露出・レビュー強化施策を立案し、主力依存度を来月中に${Math.round(topShare-10)}%以下に下げる目標を設定する`,`[在庫] ${top.n}の在庫${top.stock!=null?top.stock+'個':'データなし'}を確認し、欠品シナリオの代替案（定期一時停止フロー等）を用意する`];
+  } else if(lowStock.length>0){
+    const s=lowStock[0];
+    status='warn';
+    fact=`${s.n}の在庫（${s.stock}個）が直近期間の販売数（${s.units}個）の半分以下。このペースで販売が続くと欠品リスクがある。`;
+    actions=[`[在庫] ${s.n}の発注リードタイムを確認し、今週中に追加発注するか定期配信を一時停止するか判断する`,'[設計変更] 主要商品の在庫アラート閾値（在庫÷月次販売数<1.5ヶ月）を設定し毎月確認するフローを作る'];
+  } else if(withSess.length>=2&&cvrGap>=2){
+    status='warn';
+    fact=`${highCvr.n}（CVR ${highCvr.cvr.toFixed(2)}%）に対し${lowCvr.n}（CVR ${lowCvr.cvr.toFixed(2)}%）は${cvrGap.toFixed(1)}倍の差がある。${lowCvr.n}のLP・商品説明・レビュー数に改善余地がある可能性が高い。`;
+    actions=[`[LP改修] ${lowCvr.n}のページヒートマップを計測し、離脱ポイントと成分説明・レビューの充実度を確認する`,`[設計変更] ${lowCvr.n}のトップ画像・価格帯・セット構成を${highCvr.n}と比較し、改善ポイントを今月中に特定する`];
+  } else {
+    status='good';
+    fact=`商品集中度${topShare.toFixed(0)}%（主力: ${top.n}）で許容範囲内。AOV ¥${fmtNum(aov)}・在庫状況も安定している。`;
+    actions=['[設計変更] 定期対象外の商品に定期購入オプションを追加し、AOVと継続率を同時に改善できるか検証する','[商品設計] 四半期ごとに商品別粗利率を確認し、低粗利商品の改廃・価格改定を判断する'];
+  }
+  return _evalCard(status,fact,actions,'※主力集中度=上位商品売上÷全商品合計。CVR比較はセッション100以上の商品のみ。');
+}
+
+/* ===== 広告分析 ルールベース自動FB ===== */
+function adsFbHtml(c){
+  const ads=(c.adPlatforms||[]);
+  if(!ads.length)return '';
+  const gm=c.grossMargin||0; const breakEven=gm>0?1/gm:0;
+  const totalAd=ads.reduce((s,a)=>s+(a.cost||0),0);
+  let status,fact,actions;
+  if(totalAd===0){
+    status='bad';
+    fact='全媒体の広告費データが未連携（adCost=0）。媒体別ROASが算出できず、投資配分の判断根拠がない状態。';
+    actions=['今週中にMeta広告・Google広告の管理画面から月次広告費をエクスポートしダッシュボードJSONに連携する',`連携後、損益分岐ROAS（${breakEven>0?breakEven.toFixed(2)+'倍・粗利率'+Math.round(gm*100)+'%ベース':'粗利率設定が必要'}）を下回る媒体を特定して予算配分を見直す`];
+  } else {
+    const withCost=ads.filter(a=>(a.cost||0)>0).map(a=>({...a,_roas:(a.cvSales||0)/(a.cost)})).sort((a,b)=>a._roas-b._roas);
+    const low=withCost[0]; const high=withCost[withCost.length-1];
+    const belowBE=breakEven>0&&low&&low._roas<breakEven;
+    const gap=low&&low._roas>0?high._roas/low._roas:0;
+    if(belowBE){
+      status='bad';
+      fact=`${low.name}のROAS ${low._roas.toFixed(2)}倍が損益分岐${breakEven.toFixed(2)}倍を下回っている。広告費がコスト割れしている。${withCost.length>=2?high.name+'（'+high._roas.toFixed(2)+'倍）との差が'+gap.toFixed(1)+'倍。':''}`;
+      actions=[`[予算配分] 今週中に${low.name}のキャンペーン別ROASを確認し、損益分岐以下のキャンペーンを停止または入札を下げる`,`[予算配分] 解放した予算を${high.name}（ROAS ${high._roas.toFixed(2)}倍）に移して全体ROASを引き上げる`];
+    } else if(withCost.length>=2&&gap>=2){
+      status='warn';
+      fact=`${high.name}（ROAS ${high._roas.toFixed(2)}倍）と${low.name}（ROAS ${low._roas.toFixed(2)}倍）の差が${gap.toFixed(1)}倍。高ROASへの集中配分で全体効率を改善できる余地がある。`;
+      actions=[`[予算配分] ${low.name}の月次予算を10〜20%削減し${high.name}へ移す計画を今月中に立てる`,`[設計変更] ${low.name}のキャンペーン別ROASを確認し、クリエイティブ・ターゲティングで改善できるものと停止すべきものを切り分ける`];
+    } else {
+      status='good';
+      fact=`全媒体ROAS${breakEven>0?'が損益分岐'+breakEven.toFixed(2)+'倍を上回り':'が'}安定。最高効率媒体は${high.name}（${high._roas.toFixed(2)}倍）。`;
+      actions=[`[予算配分] ${high.name}への配分を増やし月次でROASが改善しているか確認する`,'[設計変更] 各媒体のキャンペーン別ROASを月次で記録し、配分変更の根拠を蓄積する'];
+    }
+  }
+  return _evalCard(status,fact,actions,'※損益分岐ROAS=1÷粗利率。ROAS=広告経由売上÷広告費。');
+}
+
+/* ===== 販促分析 ルールベース自動FB ===== */
+function promoFbHtml(c){
+  const promos=(c.promos||[]);
+  if(!promos.length)return '';
+  const totalSales=promos.reduce((s,p)=>s+(p.sales||0),0);
+  if(!totalSales)return '';
+  const organic=promos.filter(p=>/オーガニック|直接|ダイレクト/.test(p.name));
+  const organicSales=organic.reduce((s,p)=>s+(p.sales||0),0);
+  const organicShare=organicSales/totalSales*100;
+  const sorted=[...promos].sort((a,b)=>b.sales-a.sales);
+  const topPromo=sorted[0]; const topShare=topPromo.sales/totalSales*100;
+  const withSess=promos.filter(p=>(p.sessions||0)>0).map(p=>({...p,_cvr:p.orders/p.sessions*100})).sort((a,b)=>a._cvr-b._cvr);
+  const lowCh=withSess[0]; const highCh=withSess[withSess.length-1];
+  const cvrGap=lowCh&&highCh&&lowCh._cvr>0?highCh._cvr/lowCh._cvr:1;
+  let status,fact,actions;
+  if(organicShare>40){
+    const paidSales=promos.filter(p=>!/オーガニック|直接|ダイレクト/.test(p.name)).reduce((s,p)=>s+(p.sales||0),0);
+    const paidShare=paidSales/totalSales*100;
+    status='bad';
+    fact=`オーガニック・直接流入が売上の${organicShare.toFixed(0)}%を占める（有料・CRM経由は${paidShare.toFixed(0)}%）。Googleアップデートや競合強化で一気にアクセスが失われるリスクがある。`;
+    actions=[`[設計変更] 今月中に有料流入（現${paidShare.toFixed(0)}%）の目標シェアを設定し、メルマガ・SNS広告のどちらを先に強化するか優先度を決める`,'[設計変更] SEO依存度を下げるため既存顧客のLINE/メール登録率を測定し、CRM売上の底上げ余地を確認する'];
+  } else if(topShare>45&&sorted.length>=3){
+    status='warn';
+    const s2=sorted[1];
+    fact=`${topPromo.name}が流入売上の${topShare.toFixed(0)}%を占める単一チャネル集中。このチャネルのアルゴリズム変更・入札競合で売上全体が揺れやすい。`;
+    actions=[`[設計変更] 今月中に${s2?s2.name:'2位チャネル'}（現${s2?(s2.sales/totalSales*100).toFixed(0):'—'}%）強化の優先施策を1つ決める`,`[設計変更] ${topPromo.name}の流入が20%下落したシナリオを想定し代替チャネルの準備状況を確認する`];
+  } else if(withSess.length>=3&&cvrGap>=2){
+    status='warn';
+    fact=`${highCh.name}（CVR ${highCh._cvr.toFixed(2)}%）に対し${lowCh.name}（CVR ${lowCh._cvr.toFixed(2)}%）は${cvrGap.toFixed(1)}倍の差がある。低CVRチャネルのLPか訴求がマッチしていない可能性がある。`;
+    actions=[`[LP改修] ${lowCh.name}経由が着地するLPを確認し、訴求内容とチャネル属性（認知段階）がマッチしているか見直す`,`[設計変更] ${lowCh.name}専用のランディング体験を設計しCVRを${highCh._cvr.toFixed(2)}%水準に引き上げる目標を設定する`];
+  } else {
+    status='good';
+    fact=`オーガニック依存度${organicShare.toFixed(0)}%・最大チャネル集中${topShare.toFixed(0)}%で分散が確保されている。チャネル間CVR差${cvrGap.toFixed(1)}倍以内で安定。`;
+    actions=[`[設計変更] ${sorted[sorted.length-1]?sorted[sorted.length-1].name:'最小チャネル'}への施策を強化しチャネル分散をさらに進める`,'[設計変更] チャネル別の定期転換率を四半期ごとに確認し、高LTV流入源への投資を優先する'];
+  }
+  return _evalCard(status,fact,actions,'※オーガニック=オーガニック検索＋直接流入。CVR=購入数÷セッション数。');
+}
+
+/* ===== CRM分析 ルールベース自動FB ===== */
+function crmFbHtml(c){
+  const rfm=c.rfm||{}; const seg=rfm.seg||{}; const total=rfm.total||0;
+  const cohorts=(c.cohorts||[]);
+  if(!total&&!cohorts.length)return '';
+  const lapsedN=seg['離脱']||0;
+  const lapsedRatio=total>0?lapsedN/total*100:0;
+  const latestCo=cohorts.length>0?cohorts[cohorts.length-1]:null;
+  const prevCo=cohorts.length>1?cohorts[cohorts.length-2]:null;
+  const latestF2=latestCo?(latestCo.f2rate||0)*100:null;
+  const prevF2=prevCo?(prevCo.f2rate||0)*100:null;
+  const newN=seg['新規']||0;
+  let status,fact,actions;
+  if(latestF2!==null&&latestF2<30){
+    status='bad';
+    const f2Str=latestF2.toFixed(0);
+    const converted=latestCo?Math.round(latestCo.size*(latestCo.f2rate||0)):0;
+    const trendNote=prevF2!==null&&latestF2<prevF2?`・前月比${(latestF2-prevF2).toFixed(1)}pt低下`:'';
+    fact=`直近獲得月（${latestCo?latestCo.month:'—'}）のF2転換率${f2Str}%（${latestCo?latestCo.size:'—'}名中${converted}名が2回購入）${trendNote}。3人中2人以上が1回で離脱している。`;
+    actions=[`[CRM] 購入後7・14・30日のフォローメールシーケンスを今週中に設計する（F2率${f2Str}%→40%改善で月約${Math.round(newN*0.1)}件の追加注文）`,'[設計変更] 購入直後の同梱物（お礼状・次回クーポン・使い方ガイド）を確認し、商品到着体験を改善する'];
+  } else if(lapsedRatio>15){
+    status='warn';
+    const f2Note=latestF2!==null?`・F2転換率${latestF2.toFixed(0)}%`:'';
+    fact=`離脱層${lapsedN}名（全体の${lapsedRatio.toFixed(0)}%・6ヶ月以上購入なし）${f2Note}。離脱層を10%再活性化するだけで約${Math.round(lapsedN*0.1)}件の注文が追加できる。`;
+    actions=[`[CRM] 離脱層${lapsedN}名のうち6〜9ヶ月未購入層に絞ってウィンバックメールを配信する（過度に長期より到達率が高い）`,'[設計変更] 離脱理由を把握するためメール内に1問アンケートを入れてフィードバックを収集し次の施策に活かす'];
+  } else {
+    status='good';
+    const f2Note=latestF2!==null?`F2転換率${latestF2.toFixed(0)}%`:'—';
+    const quasiN=seg['準ロイヤル']||0;
+    fact=`${f2Note}・離脱率${lapsedRatio.toFixed(0)}%（${lapsedN}名）で定着している。ロイヤル育成フェーズに移行できる状態。`;
+    actions=[`[CRM] 準ロイヤル層（${quasiN}名）を定期/サブスクへ誘導する特典オファーを今月中に設計する`,'[CRM] ロイヤル層向けVIP特典を設計し維持率を90%以上に保つ'];
+  }
+  return _evalCard(status,fact,actions,'※F2転換率=直近獲得月コホートの2回購入率。離脱=6ヶ月以上購入なし（RFMセグメント定義による）。');
+}
+
+/* ===== 顧客分析 ルールベース自動FB ===== */
+function customerFbHtml(c){
+  const rfm=c.rfm||{}; const seg=rfm.seg||{}; const total=rfm.total||0;
+  const ltv=rfm.ltv||0;
+  const cohorts=(c.cohorts||[]);
+  if(!total)return '';
+  const royalN=seg['ロイヤル']||0; const quasiN=seg['準ロイヤル']||0;
+  const newN=seg['新規']||0; const lapsedN=seg['離脱']||0;
+  const lapsedRatio=total>0?lapsedN/total*100:0;
+  const royalRatio=total>0?royalN/total*100:0;
+  const latestCo=cohorts.length>0?cohorts[cohorts.length-1]:null;
+  const latestF2=latestCo?(latestCo.f2rate||0)*100:null;
+  const quasiUpsideRev=Math.round(quasiN*0.3*ltv/10000);
+  let status,fact,actions;
+  if(lapsedRatio>20){
+    status='bad';
+    fact=`離脱層が全顧客の${lapsedRatio.toFixed(0)}%（${lapsedN}名）と高水準。ロイヤル${royalN}名・準ロイヤル${quasiN}名に対し離脱が多く、顧客基盤の底が抜けている状態。`;
+    actions=[`[CRM] 離脱層${lapsedN}名へのウィンバックシナリオを設計し今月中に配信開始する`,'[設計変更] 初回購入後の顧客体験（同梱物・フォローメール・定期誘導）を見直し、離脱を生む構造的な原因を特定する'];
+  } else if(quasiN>royalN*2&&quasiN>=100){
+    status='warn';
+    fact=`準ロイヤル層${quasiN}名がロイヤル層${royalN}名の${(quasiN/Math.max(royalN,1)).toFixed(1)}倍。この層が定期に転換すると月約${quasiUpsideRev}万円の上積みになる試算（LTV ¥${fmtNum(ltv)}×転換率30%仮定）。`;
+    actions=[`[CRM] 準ロイヤル層${quasiN}名へ定期転換オファー（初月割引・送料無料など）を今月中に設計・配信する`,'[設計変更] 定期転換した準ロイヤル層の3ヶ月継続率を測定しオファー設計の効果を検証する'];
+  } else if(latestF2!==null&&latestF2<35){
+    status='warn';
+    fact=`直近獲得月F2転換率${latestF2.toFixed(0)}%。新規${newN}名の定着率が低く、ロイヤル・準ロイヤル層への引き上げが進みにくい状態。LTV ¥${fmtNum(ltv)}の実現にはF2転換の改善が先決。`;
+    actions=[`[CRM] 購入後14日・30日のフォローメール・LINEを設計し新規定着率を${latestF2.toFixed(0)}%→40%に改善する`,'[設計変更] ロイヤル層の行動パターン（何がきっかけで定期転換したか）を分析し準ロイヤル・新規への再現施策を設計する'];
+  } else {
+    status='good';
+    fact=`ロイヤル層${royalN}名（${royalRatio.toFixed(0)}%）・離脱率${lapsedRatio.toFixed(0)}%で顧客基盤は安定。推定LTV ¥${fmtNum(ltv)}で収益性も確保されている。`;
+    actions=[`[CRM] ロイヤル層${royalN}名のLook-alikeを広告媒体に登録し類似新規獲得の効率を高める`,'[設計変更] セグメント別LTV推移を四半期ごとに確認し、低下の早期シグナルを検知する仕組みを作る'];
+  }
+  return _evalCard(status,fact,actions,'※準ロイヤル転換試算=準ロイヤル人数×30%×LTV（参考値）。セグメント定義はRFMスコアベース。');
+}
+
 /* ===== 売上タブ ルールベース自動FB（MVP） ===== */
 /* 視点フィルタ（課題領域。答えでなく「どの観点で評価するか」を選ぶ） */
 const SALES_AREAS=[['overall','売上全体を伸ばす'],['acquire','新規流入を増やす'],['cvr','転換率(CVR)を上げる'],['aov','客単価を上げる'],['retain','定期・リピートを増やす']];
@@ -221,8 +415,10 @@ function salesKpiCtx(){
   const cvrD=cvr_p>0?(cvr_r/cvr_p-1)*100:0;
   const aov=tO>0?tS/tO:0, aovD=pct(ro>0?rs/ro:0, po>0?ps/po:0);
   const lab=(v,t)=>{t=t||5;return v>t?'up':v<-t?'down':'flat';};
+  const rSc=S(rec,d=>d.subCust||0), pSc=S(prv,d=>d.subCust||0);
+  const subCustDelta=pct(rSc,pSc);
   return {months:n, sales_delta:pct(rs,ps), session_delta:pct(rse,pse), orders_delta:pct(ro,po),
-    cvr, cvr_delta:cvrD, aov, aov_delta:aovD, sub_ratio:tS>0?tSub/tS*100:0,
+    cvr, cvr_delta:cvrD, aov, aov_delta:aovD, sub_ratio:tS>0?tSub/tS*100:0, subCustDelta,
     sales_t:lab(pct(rs,ps)), session_t:lab(pct(rse,pse)), orders_t:lab(pct(ro,po)), cvr_t:lab(cvrD), aov_t:lab(aovD)};
 }
 /* ルール表：when(離散ラベル条件) → status / 事実(fact) / 気づき(insight) / 確認の問い(q)。areaは関連視点 */
@@ -236,12 +432,15 @@ const SALES_RULES=[
   {id:'aov_up_orders_down',when:c=>c.aov_t==='up'&&c.orders_t==='down',status:'warn',area:'aov',
     fact:'客単価は前期比{aov_delta}%上昇する一方、注文件数は{orders_delta}%減少しています。',
     actions:['お試しサイズ／エントリー商品を用意し、新規の入口（件数）を増やす','高単価商品はセット・同梱販売に組み替え、件数を落とさず単価を維持する','離脱した価格帯の顧客にクーポンで再アプローチする']},
-  {id:'sub_strong',when:c=>c.sub_ratio>=35,status:'good',area:'retain',
-    fact:'定期売上比率が{sub_ratio}%と高く、収益の安定基盤になっています。',
+  {id:'sub_declining',when:c=>c.sub_ratio>=30&&c.subCustDelta<-5,status:'warn',area:'retain',
+    fact:'定期売上比率{sub_ratio}%は高いが定期顧客数が前期比{subCustDelta}%減少。解約が加速しているか、新規定期が取れていない可能性がある。',
+    actions:['定期の解約数と解約理由を確認し、解約増加なのか新規定期減少なのかを切り分ける（CRMタブのコホートF2率を参照）','高解約フェーズ（何回目が多いか）を特定し、その回に同梱フォロー施策を集中させる']},
+  {id:'sub_strong',when:c=>c.sub_ratio>=35&&c.subCustDelta>=-5,status:'good',area:'retain',
+    fact:'定期売上比率が{sub_ratio}%と高く、定期顧客数も前期比{subCustDelta}%で安定している。収益の安定基盤になっています。',
     actions:['初回→2回目の継続率を測定し、解約が多い回数にフォロー施策（同梱・リマインド）を入れる','定期会員限定特典で継続インセンティブを強化する','単発購入者を定期へ誘導する初回割引オファーを設計する']},
   {id:'healthy',when:c=>c.sales_t==='up'&&c.cvr_t!=='down',status:'good',area:'overall',
     fact:'売上は前期比{sales_delta}%、CVR{cvr}%を保ちながら成長しています。',
-    actions:['好調なチャネル・商品へ予算/在庫を配分し伸びを加速する','需要増(+{session_delta}%)に合わせて在庫・供給体制を確保する','好調要因を記録し、再現できる形に標準化する']},
+    actions:['成長を牽引したチャネル・商品を特定し（広告分析/商品別タブで確認）、そこへ予算と在庫を重点配分する','需要増(+{session_delta}%)に合わせて在庫・供給体制を確認する','好調要因を記録し再現できる形に標準化する']},
   {id:'sales_down',when:c=>c.sales_t==='down',status:'bad',area:'overall',
     fact:'売上が前期比{sales_delta}%と減少しています（アクセス{session_delta}% / CVR{cvr_delta}% / 客単価{aov_delta}%）。',
     actions:['最も悪化した指標（流入/転換/単価）に絞ってテコ入れする','前年同月比で季節要因を切り分け、構造要因なら主力商品・集客を見直す','直近の価格・送料・LP変更があればロールバックを検討する']},
@@ -499,6 +698,7 @@ function renderChan(key){
   </div>
 
   <div class="pane ${curTab==='product'?'active':''}" id="pane-product">
+    ${productFbHtml(c)}
     ${tacticsPanelHtml('product')}
     <div class="grid c2e">
       <div class="card"><div class="card-h"><h3>商品別 売上（通常 / 定期 / 合計）</h3><span class="hint">行クリックでアクセス数・購入件数・CVR</span></div><div class="card-b">
@@ -510,6 +710,7 @@ function renderChan(key){
   </div>
 
   <div class="pane ${curTab==='ads'?'active':''}" id="pane-ads">
+    ${adsFbHtml(c)}
     ${tacticsPanelHtml('ads')}
     <div id="ads-stats" class="rpp-grid" style="margin-bottom:18px"></div>
     <div class="grid c2e">
@@ -522,6 +723,7 @@ function renderChan(key){
   </div>
 
   <div class="pane ${curTab==='promo'?'active':''}" id="pane-promo">
+    ${promoFbHtml(c)}
     ${tacticsPanelHtml('promo')}
     <div class="grid c2e">
       <div class="card"><div class="card-h"><h3>${c.name} 流入チャネル別 売上</h3><span class="hint">行クリックでキャンペーン内訳</span></div><div class="card-b">
@@ -533,6 +735,7 @@ function renderChan(key){
   </div>
 
   <div class="pane ${curTab==='crm'?'active':''}" id="pane-crm">
+    ${crmFbHtml(c)}
     ${tacticsPanelHtml('crm')}
     <div class="grid c2">
       <div class="card"><div class="card-h"><h3>RFMマトリクス（横=F・縦=R・セル=顧客数）</h3><span class="hint">セルをクリックで該当顧客（匿名）</span></div><div class="card-b">
@@ -543,6 +746,7 @@ function renderChan(key){
   </div>
 
   <div class="pane ${curTab==='customer'?'active':''}" id="pane-customer">
+    ${customerFbHtml(c)}
     ${tacticsPanelHtml('customer')}
     <div class="grid c2e">
       <div class="card"><div class="card-h"><h3>顧客セグメント構成</h3><span class="hint">グラフ/表クリックで顧客＋RFM</span></div><div class="card-b">
